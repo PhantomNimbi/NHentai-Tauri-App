@@ -17,3 +17,13 @@ pub fn init_webnotifications(app: &AppHandle) -> Result<(), Box<dyn std::error::
 
     Ok(())
 }
+
+#[tauri::command]
+pub fn native_notify(app: tauri::AppHandle, title: String, body: String) -> Result<(), String> {
+    app.notification()
+        .builder()
+        .title(title)
+        .body(body)
+        .show()
+        .map_err(|e| e.to_string())
+}

@@ -6,7 +6,7 @@
 
 ## Custom App UI
 
-The app serves a **custom frontend** (`frontend/index.html`) that replaces the nhentai.net website for browsing, searching, and reading.
+The app serves a **custom frontend** (`src/index.html`) that replaces the nhentai.net website for browsing, searching, and reading.
 
 | Aspect | Detail |
 |---|---|
@@ -84,9 +84,9 @@ All nhentai.net API calls go through a Rust reqwest HTTP client, bypassing WebVi
 
 | Aspect | Detail |
 |---|---|
-| **Client** | `reqwest::Client` (singleton, lazy-initialized) |
+| **Client** | `reqwest::Client` (singleton, lazy-initialized; rustls TLS-enabled) |
 | **Base URL** | `https://nhentai.net/api/v2` |
-| **User-Agent** | `NClient/1.0.0` |
+| **User-Agent** | `NClient/1.0.1` |
 | **Cookie jar** | Shared in-memory `HashMap`; forwarded from WebView via JS injection |
 | **API key** | Optional; sent as `Authorization: Key <api_key>` header |
 

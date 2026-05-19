@@ -6,14 +6,19 @@ This document provides detailed instructions for AI agents working on the NHenta
 
 ### Current release
 
-- Version: v1.0.0
-- Date: 2026-05-18
+- Version: v1.0.1
+- Date: 2026-05-19
 - Summary: Initial release for nhentai.net.
 - Notes:
   - API-backed tag filtering with live tag search via `/api/v2/tags/search` and tag listing via `/api/v2/tags/{type}`.
   - Tag Filter page no longer depends on local DB population; it uses live API tag listings and incremental pagination.
   - Home `All` sort is the only sort that applies tag filters; other home sorts ignore active tags.
   - Removed custom frontend rate limiting from the Rust API layer.
+  - Added rustls TLS support for reqwest to ensure HTTPS API requests to nhentai.net succeed at runtime.
+  - AI agents must prioritize true root-cause fixes and avoid workaround patches that only mask symptoms.
+  - Avoid carrying broken state or stale cache paths forward between fixes; reset invalid state when needed.
+  - Always use the correct nhentai.net API v2 endpoints for this app; do not mix in endpoints from other websites or unrelated APIs when working with API logic.
+  - Confirm changes actually work before saving them. If an issue is not completely fixed, revert the changes rather than leaving the app in a worse state.
 ## 🏗️ Architecture Guidelines
 
 ### Tauri V2 Standards
@@ -28,7 +33,7 @@ This document provides detailed instructions for AI agents working on the NHenta
 - `src-tauri/`: Contains platform-specific configuration and build scripts (single source for all platforms)
 - `src-tauri/src/lib.rs`: Main application entry point and setup for desktop only
 - Feature modules: Each major feature gets its own file in `src-tauri/src/ext/` (navigation.rs, downloads.rs, api.rs, database.rs, etc.)
-- `frontend/index.html`: Complete single-page app — API-driven browsing, search, tag filter with three-state toggles, favorites, history, settings (including API key input), and in-app gallery reader. The app loads this instead of nhentai.net directly. nhentai.net is only loaded in the WebView for login pages.
+- `src/index.html`: Complete single-page app — API-driven browsing, search, tag filter with three-state toggles, favorites, history, settings (including API key input), and in-app gallery reader. The app loads this instead of nhentai.net directly. nhentai.net is only loaded in the WebView for login pages.
 - Three-state tag system: DEFAULT (0), ACCEPTED (2), AVOIDED (1). Tags cycle through these states on click.
 - ACCEPTED tags appended as `tag:"name"` (required), AVOIDED as `-tag:"name"` (excluded) in every API query.
 - SQLite database (`nhentai.db`) stores all persistent data — tags, history, favorites, settings, gallery cache, search cache.

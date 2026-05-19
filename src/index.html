@@ -69,8 +69,9 @@ input{font:inherit}
 .gallery-card .card-info .fav{color:#f1c40f}
 .gallery-card .fav-badge{position:absolute;top:4px;right:6px;color:#f1c40f;font-size:14px;text-shadow:0 0 4px rgba(0,0,0,.8);display:none}
 .gallery-card.has-fav .fav-badge{display:block}
-
-/* Detail view related gallery cards (compact) */
+        .gallery-card .fav-toggle{position:absolute;top:6px;right:6px;width:28px;height:28px;border:none;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,transform .15s;}
+        .gallery-card .fav-toggle:hover{background:rgba(0,0,0,.75);transform:scale(1.05);}
+        .gallery-card.has-fav .fav-toggle{background:rgba(241,196,15,.9);color:#222;}
 #view-detail .gallery-card .card-img-wrap{aspect-ratio:3/4;background:#111}
 #view-detail .gallery-card .card-img-wrap img{width:100%;height:100%;object-fit:cover;display:block}
 #view-detail .gallery-card .card-caption{padding:4px 6px 2px;font-size:11px}
@@ -190,8 +191,8 @@ input{font:inherit}
 .gd-actions{display:flex;gap:8px;margin-top:12px}
 .gd-read-btn{flex:1;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;transition:background .15s;text-align:center}
 .gd-read-btn:hover{background:var(--accent-hover)}
-.gd-fav-btn{padding:10px 16px;background:var(--card);border:1px solid var(--border);color:var(--text-dim);border-radius:var(--radius);font-size:14px;cursor:pointer;transition:color .15s,border-color .15s,background .15s;white-space:nowrap}
-.gd-fav-btn:hover{border-color:var(--accent);color:var(--accent)}
+.gd-fav-btn, .gd-download-btn{padding:10px 16px;background:var(--card);border:1px solid var(--border);color:var(--text-dim);border-radius:var(--radius);font-size:14px;cursor:pointer;transition:color .15s,border-color .15s,background .15s;white-space:nowrap}
+.gd-fav-btn:hover, .gd-download-btn:hover{border-color:var(--accent);color:var(--accent)}
 .gd-fav-btn.fav{color:#f1c40f;border-color:#f1c40f;background:rgba(241,196,15,.08)}
 .gd-info{flex:1;min-width:0}
 .gd-title{font-size:18px;font-weight:700;color:#fff;margin-bottom:8px;line-height:1.3}
@@ -279,13 +280,6 @@ input{font:inherit}
 <!-- Home -->
 <div class="view active" id="view-home">
   <div class="content">
-    <div class="sort-bar" id="home-sort-bar">
-      <button data-sort="all">All</button>
-      <button data-sort="newest" class="active">Newest</button>
-      <button data-sort="popular-today">Popular Today</button>
-      <button data-sort="popular-week">Popular Week</button>
-      <button data-sort="popular">Popular All Time</button>
-    </div>
     <div id="home-content"></div>
   </div>
 </div>
@@ -294,16 +288,10 @@ input{font:inherit}
 <div class="view" id="view-search">
   <div class="content">
     <div class="search-bar">
-      <input type="text" id="search-input" placeholder="Search... (e.g. 'tag:"lolicon" artist:"name"')" autocomplete="off">
+      <input type="text" id="search-input" placeholder="Search... (e.g. 'tag:\"lolicon\" artist:\"name\"')" autocomplete="off">
       <button id="search-btn">Search</button>
     </div>
     <div class="search-tags" id="search-tags"></div>
-    <div class="sort-bar" id="search-sort-bar">
-      <button data-sort="newest" class="active">Newest</button>
-      <button data-sort="popular-today">Popular Today</button>
-      <button data-sort="popular-week">Popular Week</button>
-      <button data-sort="popular">Popular All Time</button>
-    </div>
     <div id="search-results"></div>
   </div>
 </div>
@@ -367,7 +355,7 @@ input{font:inherit}
         </div>
         <div class="gd-actions">
           <button class="gd-read-btn" id="detail-read-btn">&#9654; Read</button>
-          <button class="gd-fav-btn" id="detail-fav-btn">&#9734; Favorite</button>
+          <button class="gd-download-btn" id="detail-download-btn">Download</button>
         </div>
       </div>
       <div class="gd-info">
@@ -425,6 +413,7 @@ input{font:inherit}
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
           <input type="password" id="set-api-key" style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-alt);color:var(--text);font-size:13px;width:220px" placeholder="nhk_...">
           <button id="save-api-key-btn" style="padding:6px 12px;background:var(--accent);color:#fff;border-radius:var(--radius);font-size:12px">Save</button>
+          <button id="clear-api-key-btn" style="padding:6px 12px;background:var(--avoid);color:#fff;border-radius:var(--radius);font-size:12px">Clear</button>
         </div>
       </div>
     </div>
@@ -767,6 +756,10 @@ function apiGetDownloadUrl(id) {
   return invoke('api_get_download_url', { id: id });
 }
 
+function apiDownloadGallery(id) {
+  return invoke('api_download_gallery', { id: id });
+}
+
 function apiTagsByIds(ids) {
   return invoke('api_tags_by_ids', { ids: ids });
 }
@@ -793,6 +786,60 @@ function apiFavoritesRandom() {
 
 function apiBlacklistIds() {
   return invoke('api_blacklist_ids');
+}
+
+function dbGetGalleryCacheBulk(gallery_ids) {
+  return invoke('db_get_gallery_cache_bulk', { gallery_ids: gallery_ids });
+}
+
+function saveGalleryEntriesToDb(galleries) {
+  if (!Array.isArray(galleries)) return;
+  galleries.forEach(function (g) {
+    if (!g || g.id === undefined || g.id === null) return;
+    var copy = Object.assign({}, g);
+    if (copy.coverUrl) delete copy.coverUrl;
+    invoke('db_save_gallery_cache', { gallery_id: parseInt(g.id, 10), data: JSON.stringify(copy) }).catch(function () {});
+  });
+}
+
+function hydrateGalleryListFromDb(galleries) {
+  var ids = [];
+  galleries.forEach(function (g) {
+    var id = parseInt(g.id, 10);
+    if (!isNaN(id)) ids.push(id);
+  });
+  if (ids.length === 0) return Promise.resolve(galleries);
+  return dbGetGalleryCacheBulk(ids).then(function (rows) {
+    var cacheMap = {};
+    if (Array.isArray(rows)) {
+      rows.forEach(function (row) {
+        if (!row || row.length < 2) return;
+        var id = parseInt(row[0], 10);
+        if (isNaN(id)) return;
+        try {
+          cacheMap[id] = JSON.parse(row[1]);
+        } catch (_) {}
+      });
+    }
+    return galleries.map(function (g) {
+      var id = parseInt(g.id, 10);
+      if (!isNaN(id) && cacheMap[id]) {
+        var cached = cacheMap[id];
+        if (cached && typeof cached === 'object') {
+          delete cached.coverUrl;
+        }
+        return Object.assign({}, g, cached);
+      }
+      return g;
+    });
+  }).catch(function () {
+    return galleries;
+  });
+}
+
+function renderGrid(container, data, query, sort, page) {
+  var galleries = data.result || [];
+  renderGridSync(container, data, query, sort, page);
 }
 
 // Build a full CDN URL from a server hostname and a relative path.
@@ -825,7 +872,12 @@ function imageExtension(type) {
 
 function thumbUrl(g) {
   if (!g) return '';
-  if (g.coverUrl) return g.coverUrl;
+  if (typeof g.coverUrl === 'string' && g.coverUrl.trim()) {
+    var cover = g.coverUrl.trim();
+    if (cover.indexOf('://') !== -1 || cover.indexOf('//') === 0) {
+      return cover;
+    }
+  }
   var server = pickServer(thumbServers, 't4.nhentai.net');
 
   // If there is a thumbnail string, treat it as a relative CDN path
@@ -852,7 +904,8 @@ function thumbUrl(g) {
       return g.coverUrl;
     }
   }
-  // Last resort: construct from media_id — matches the website's own pattern
+
+  // Last resort: construct from media_id or gallery id.
   var id = g.media_id || g.id;
   g.coverUrl = cdnUrl(server, 'galleries/' + id + '/thumb.webp');
   return g.coverUrl;
@@ -926,7 +979,7 @@ function getLanguageFlag(gallery) {
 /*  Gallery grid renderer                                              */
 /* ================================================================== */
 
-function renderGrid(container, data, query, sort, page) {
+function renderGridSync(container, data, query, sort, page) {
   var galleries = data.result || [];
   if (galleries.length === 0) {
     container.innerHTML = '<div class="tf-empty">No galleries found</div>';
@@ -954,13 +1007,14 @@ function renderGrid(container, data, query, sort, page) {
     var favCount = g.num_favorites || g.favorites || '';
     var lang = getLanguage(g);
     html += '<div class="gallery-card' + (isFav ? ' has-fav' : '') + '" data-gid="' + g.id + '">';
-    html += '  <div class="card-img-wrap"><img src="' + img + '" alt="" loading="lazy"></div>';
+    html += '  <div class="card-img-wrap"><img src="' + escAttr(img) + '" alt="" loading="lazy"></div>';
     html += '  <div class="card-caption">' + escHtml(title) + '</div>';
     html += '  <div class="card-info">';
     if (pages) html += '<span class="pages">' + pages + 'p</span>';
     if (lang) html += '<span class="lang">' + escHtml(lang) + '</span>';
     if (favCount) html += '<span class="fav">\u2605 ' + favCount + '</span>';
     html += '  </div>';
+    html += '  <button class="fav-toggle" data-gid="' + g.id + '">' + (isFav ? '\u2605' : '\u2606') + '</button>';
     html += '  <div class="fav-badge">' + (isFav ? '\u2605' : '') + '</div>';
     html += '</div>';
   });
@@ -994,6 +1048,7 @@ function renderGrid(container, data, query, sort, page) {
   }
 
   container.innerHTML = html;
+  requestAnimationFrame(function () { proxyLoadImages(container); });
 
   // Events
   container.querySelectorAll('.gallery-card').forEach(function (card) {
@@ -1522,17 +1577,62 @@ function loadReader(id) {
   });
 }
 
+function setImageElementSource(imgEl, src) {
+  return new Promise(function (resolve, reject) {
+    var loader = new Image();
+    loader.onload = function () {
+      imgEl.src = src;
+      imgEl.style.visibility = 'visible';
+      imgEl.style.opacity = '1';
+      resolve();
+    };
+    loader.onerror = function () {
+      reject('Image load failed');
+    };
+    loader.src = src;
+  });
+}
+
 // Load an image element via the Rust proxy (bypasses CDN referrer/cookie restrictions)
 // Returns a promise that resolves when the image is loaded or rejects on error.
 function loadImageViaProxy(imgEl, url) {
   if (!imgEl || !url) return Promise.reject('No element or URL');
+  imgEl.style.visibility = 'hidden';
+  imgEl.style.opacity = '0';
   return invoke('api_fetch_image_base64', { url: url }).then(function (res) {
-    return new Promise(function (resolve, reject) {
-      imgEl.onload = function () { imgEl.style.display = 'block'; resolve(); };
-      imgEl.onerror = function () { reject('Image decode failed'); };
-      imgEl.src = 'data:' + res.mime + ';base64,' + res.data;
-    });
+    if (!res || !res.mime || !res.data) {
+      return Promise.reject('Invalid image proxy response');
+    }
+    return setImageElementSource(imgEl, 'data:' + res.mime + ';base64,' + res.data);
+  }).catch(function (err) {
+    console.warn('Proxy image load failed, falling back to direct URL:', url, err);
+    return setImageElementSource(imgEl, url);
   });
+}
+
+function proxyLoadImages(container) {
+  if (!container) return;
+  var imageEls = Array.from(container.querySelectorAll('img[data-src]'));
+  var concurrency = 4;
+  var index = 0;
+
+  function next() {
+    if (index >= imageEls.length) return;
+    var imgEl = imageEls[index++];
+    var src = imgEl.getAttribute('data-src');
+    if (!src) {
+      imgEl.alt = 'No image URL';
+      next();
+      return;
+    }
+    loadImageViaProxy(imgEl, src).catch(function () {
+      imgEl.alt = 'Image failed';
+    }).finally(next);
+  }
+
+  for (var i = 0; i < concurrency; i++) {
+    next();
+  }
 }
 
 /* ================================================================== */
@@ -1546,7 +1646,7 @@ function loadGalleryDetail(id) {
   var tagsEl = document.getElementById('detail-tags');
   var relatedEl = document.getElementById('detail-related');
   var readBtn = document.getElementById('detail-read-btn');
-  var favBtn = document.getElementById('detail-fav-btn');
+  var downloadBtn = document.getElementById('detail-download-btn');
 
   coverEl.innerHTML = '<div class="gd-loading">Loading...</div>';
   titleEl.textContent = '';
@@ -1554,15 +1654,11 @@ function loadGalleryDetail(id) {
   tagsEl.innerHTML = '';
   relatedEl.innerHTML = '';
   readBtn.style.display = 'none';
-  favBtn.style.display = 'none';
-
-  var favId = String(id);
-  var isFav = favorites.indexOf(parseInt(id, 10)) !== -1 || favorites.indexOf(favId) !== -1;
-  favBtn.textContent = isFav ? '\u2605 Favorited' : '\u2606 Favorite';
+  if (downloadBtn) downloadBtn.style.display = 'none';
 
   invoke('api_gallery', { id: id }).then(function (data) {
     data.pages = buildGalleryPages(data);
-    renderGalleryDetail(data, id, coverEl, titleEl, metaEl, tagsEl, relatedEl, readBtn, favBtn, isFav);
+    renderGalleryDetail(data, id, coverEl, titleEl, metaEl, tagsEl, relatedEl, readBtn, downloadBtn);
     // Cache the enriched response
     invoke('db_save_gallery_cache', { gallery_id: id, data: JSON.stringify(data) }).catch(function () {});
   }).catch(function (err) {
@@ -1572,7 +1668,7 @@ function loadGalleryDetail(id) {
         try {
           var d = JSON.parse(cached);
           // Re-render the same as above but skip caching
-          renderGalleryDetail(d, id, coverEl, titleEl, metaEl, tagsEl, relatedEl, readBtn, favBtn, isFav);
+          renderGalleryDetail(d, id, coverEl, titleEl, metaEl, tagsEl, relatedEl, readBtn, downloadBtn);
           return;
         } catch (_) {}
       }
@@ -1583,7 +1679,7 @@ function loadGalleryDetail(id) {
   });
 }
 
-function renderGalleryDetail(data, id, coverEl, titleEl, metaEl, tagsEl, relatedEl, readBtn, favBtn, isFav) {
+function renderGalleryDetail(data, id, coverEl, titleEl, metaEl, tagsEl, relatedEl, readBtn, downloadBtn) {
   _detailGalleryData = data;
   if (data.tags && Array.isArray(data.tags)) {
     data.tags.forEach(function (t) {
@@ -1602,8 +1698,10 @@ function renderGalleryDetail(data, id, coverEl, titleEl, metaEl, tagsEl, related
   coverEl.innerHTML = '';
   var img = document.createElement('img');
   img.alt = 'Cover';
+  img.src = coverUrl;
+  img.style.visibility = 'visible';
+  img.style.opacity = '1';
   coverEl.appendChild(img);
-  loadImageViaProxy(img, coverUrl);
 
   var parts = [];
   if (data.num_pages) parts.push(data.num_pages + ' pages');
@@ -1661,23 +1759,24 @@ function renderGalleryDetail(data, id, coverEl, titleEl, metaEl, tagsEl, related
     }
   };
 
-  favBtn.style.display = 'block';
-  favBtn.className = 'gd-fav-btn' + (isFav ? ' fav' : '');
-  favBtn.onclick = function () {
-    var gid = parseInt(id, 10);
-    invoke('db_toggle_favorite', { gallery_id: gid }).then(function (result) {
-      var nowFav = result ? true : false;
-      if (nowFav) {
-        favBtn.textContent = '\u2605 Favorited';
-        favBtn.classList.add('fav');
-        if (favorites.indexOf(gid) === -1) favorites.push(gid);
-      } else {
-        favBtn.textContent = '\u2606 Favorite';
-        favBtn.classList.remove('fav');
-        favorites = favorites.filter(function (f) { return f !== gid; });
-      }
-    });
-  };
+  if (downloadBtn) {
+    downloadBtn.style.display = 'block';
+    downloadBtn.textContent = 'Download';
+    downloadBtn.onclick = function () {
+      downloadBtn.disabled = true;
+      downloadBtn.textContent = 'Downloading...';
+      apiDownloadGallery(id).then(function (path) {
+        showNotification('Download complete', 'Saved to ' + path);
+      }).catch(function (err) {
+        console.warn('Download failed', err);
+        showNotification('Download failed', (err && err.message ? err.message : String(err)));
+        alert('Download failed: ' + (err && err.message ? err.message : String(err)));
+      }).finally(function () {
+        downloadBtn.disabled = false;
+        downloadBtn.textContent = 'Download';
+      });
+    };
+  }
 
   if (data.related && Array.isArray(data.related) && data.related.length > 0) {
     var relHtml = '<h3>Related</h3>';
@@ -1685,11 +1784,18 @@ function renderGalleryDetail(data, id, coverEl, titleEl, metaEl, tagsEl, related
     data.related.forEach(function (rg) {
       if (!rg || !rg.id) return;
       var rt = thumbUrl(rg);
-      var rtTitle = rg.title && (rg.title.pretty || rg.title.english || rg.title.japanese || 'Untitled');
+      var rtTitle = '';
+      if (typeof rg.title === 'string' && rg.title.trim()) {
+        rtTitle = rg.title;
+      } else if (rg.title && typeof rg.title === 'object') {
+        rtTitle = rg.title.pretty || rg.title.english || rg.title.japanese || 'Untitled';
+      } else {
+        rtTitle = rg.english_title || rg.japanese_title || rg.name || 'Untitled';
+      }
       var rLang = getLanguage(rg);
       var rPages = rg.num_pages || '';
       relHtml += '<div class="gallery-card" data-gid="' + rg.id + '">';
-      relHtml += '<div class="card-img-wrap"><img src="' + rt + '" alt="" loading="lazy"></div>';
+      relHtml += '<div class="card-img-wrap"><img src="' + escAttr(rt) + '" alt="" loading="lazy"></div>';
       relHtml += '<div class="card-caption">' + escHtml(rtTitle) + '</div>';
       relHtml += '<div class="card-info">';
       if (rPages) relHtml += '<span class="pages">' + rPages + 'p</span>';
@@ -1698,6 +1804,7 @@ function renderGalleryDetail(data, id, coverEl, titleEl, metaEl, tagsEl, related
     });
     relHtml += '</div>';
     relatedEl.innerHTML = relHtml;
+    requestAnimationFrame(function () { proxyLoadImages(relatedEl); });
     relatedEl.querySelectorAll('.gallery-card').forEach(function (card) {
       card.addEventListener('click', function () {
         var gid = card.getAttribute('data-gid');
@@ -1793,7 +1900,8 @@ function showReaderPage(n) {
   var reqId = ++_readerReqId;
   loadingEl.textContent = 'Loading page ' + n + '...';
   loadingEl.style.display = 'block';
-  imgEl.style.display = 'none';
+  imgEl.style.visibility = 'hidden';
+  imgEl.style.opacity = '0';
 
   if (imgUrl) {
     loadImageViaProxy(imgEl, imgUrl).then(function () {
@@ -1826,9 +1934,13 @@ function preloadReaderPages(from, count) {
     if (n > pages.length) break;
     var p = pages[n - 1];
     if (!p) break;
-    var s = pickServer(imageServers, 'i4.nhentai.net');
     var url = getGalleryPageUrl(p, currentGalleryData);
-    if (url) { var img = new Image(); img.src = url; }
+    if (url) {
+      var img = document.createElement('img');
+      img.style.visibility = 'hidden';
+      img.style.opacity = '0';
+      loadImageViaProxy(img, url).catch(function () {});
+    }
   }
 }
 
@@ -2071,12 +2183,47 @@ function setApiStatus(enabled) {
   statusEl.className = 'login-status ' + (enabled ? 'logged-in' : 'logged-out');
 }
 
+function showNotification(title, body) {
+  invoke('native_notify', { title: title, body: body }).catch(function (err) {
+    console.warn('Native notification failed', err);
+    if (!('Notification' in window)) {
+      return false;
+    }
+    try {
+      if (Notification.permission === 'granted') {
+        new Notification(title, { body: body });
+        return true;
+      }
+      if (Notification.permission === 'default') {
+        Notification.requestPermission().then(function (permission) {
+          if (permission === 'granted') {
+            new Notification(title, { body: body });
+          }
+        }).catch(function () {});
+        return true;
+      }
+    } catch (err2) {
+      console.warn('Fallback notification failed', err2);
+    }
+    return false;
+  });
+  return true;
+}
+
 /* ================================================================== */
 /*  Utilities                                                         */
 /* ================================================================== */
 
-function escHtml(s) { var d = document.createElement('div'); d.appendChild(document.createTextNode(s)); return d.innerHTML; }
-function escAttr(s) { return String(s).replace(/"/g,'&quot;').replace(/&/g,'&amp;'); }
+function escHtml(s) {
+  if (s === undefined || s === null) return '';
+  var d = document.createElement('div');
+  d.appendChild(document.createTextNode(String(s)));
+  return d.innerHTML;
+}
+function escAttr(s) {
+  if (s === undefined || s === null) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+}
 
 /* Expose for inline handlers */
 window._loadRandom = loadRandom;
@@ -2089,7 +2236,8 @@ function init() {
   // Set up UI immediately so the user never stares at a blank/loading page
   initUI();
   switchView('home');
-  // Load persisted data in the background (DB or localStorage)
+  // Restore saved API key and persisted data in the background (DB or localStorage)
+  loadApiKey();
   loadAll().then(function () {
     if (currentView === 'search') {
       renderSearchTagChips();
@@ -2100,6 +2248,16 @@ function init() {
   }).catch(function () {});
   // Fetch CDN config
   loadConfig();
+}
+
+function loadApiKey() {
+  invoke('db_get_setting', { key: 'api_key' }).then(function (val) {
+    if (val && typeof val === 'string' && val.trim()) {
+      invoke('api_set_api_key', { key: val.trim() }).catch(function () {});
+    } else {
+      invoke('api_clear_api_key').catch(function () {});
+    }
+  }).catch(function () {});
 }
 
 function loadConfig() {
@@ -2158,6 +2316,14 @@ function initUI() {
         setApiStatus(false);
       });
     }
+  });
+  document.getElementById('clear-api-key-btn').addEventListener('click', function () {
+    document.getElementById('set-api-key').value = '';
+    invoke('api_clear_api_key').then(function () {
+      setApiStatus(false);
+    }).catch(function () {
+      setApiStatus(false);
+    });
   });
 
   // Clear buttons

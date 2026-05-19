@@ -1,3 +1,15 @@
+## v1.0.1 - 2026-05-19
+
+### ✨ What's new
+
+- 🚀 Updated the app version to `1.0.1` across manifest files and release metadata.
+- 📁 Renamed the frontend folder from `frontend/` to `src/` and updated configuration/docs accordingly.
+- 🧾 Fixed the gallery card description rendering so missing or undefined text no longer shows `undefined`.
+- 🔍 Aligned the Search page sort bar with the Home page sort bar by adding the `All` sort option.
+- 🔒 Added rustls TLS-backed reqwest support for HTTPS nhentai.net API calls so network requests work reliably at runtime.
+- 🧠 Updated documentation and agent guidance to reflect the correct nhentai v2 API usage, confirm-before-save policy, and root-cause-first fix approach.
+- 🔒 Added rustls TLS support for reqwest so HTTPS API requests to nhentai.net are reliable at runtime.
+
 ## v1.0.0 - 2026-05-18
 
 ### ✨ What's new
@@ -36,6 +48,6 @@
 
 ### 🧩 Technical notes
 
-- Built with Tauri v2 and Rust, using a single-page frontend in `frontend/index.html`.
+- Built with Tauri v2 and Rust, using a single-page frontend in `src/index.html`.
 - All nhentai API requests go through a Rust reqwest proxy to bypass WebView CORS and support optional API key authentication.
 - SQLite is used for persistent storage of tags, history, favorites, settings, gallery cache, and search cache.

@@ -4,6 +4,8 @@ use ext::database;
 use ext::navigation;
 use ext::api;
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
+use ext::webnotifications;
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
 #[cfg(any(target_os = "android", target_os = "ios"))]
 use tauri::{Manager, WebviewUrl, WebviewWindowBuilder};
@@ -67,6 +69,7 @@ pub fn run() {
              database::db_set_setting,
              database::db_get_snapshot,
              database::db_get_gallery_cache,
+             database::db_get_gallery_cache_bulk,
              database::db_save_gallery_cache,
              database::db_get_search_cache,
              database::db_save_search_cache,
@@ -89,6 +92,7 @@ pub fn run() {
              api::api_add_favorite,
              api::api_remove_favorite,
              api::api_get_download_url,
+             api::api_download_gallery,
              api::api_tags_by_ids,
              api::api_search_tags,
              api::api_tags_by_type,
@@ -99,6 +103,7 @@ pub fn run() {
              api::api_user_keys,
              api::api_blacklist_ids,
             api::api_fetch_image_base64,
+            webnotifications::native_notify,
         ])
         .plugin(tauri_plugin_global_shortcut::Builder::new().build());
 

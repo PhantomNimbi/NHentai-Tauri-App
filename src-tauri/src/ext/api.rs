@@ -1,10 +1,15 @@
 use reqwest::Client;
 use serde_json::{json, Value};
 use std::collections::HashMap;
+use std::fs;
+use std::io::{BufWriter, Write};
+use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
 use std::sync::Mutex;
 use std::sync::OnceLock;
 use std::time::Duration;
+use dirs_next::{download_dir, home_dir};
+use image::{guess_format, ImageFormat};
 
 const API_BASE: &str = "https://nhentai.net/api/v2";
 const UA: &str = "NHentaiTauriApp/1.0.0 (github.com/PhantomNimbi/NHentai-Tauri-App)";
@@ -240,10 +245,140 @@ pub async fn api_remove_favorite(id: u32) -> Result<Value, String> {
     api_delete(&format!("galleries/{}/favorite", id)).await
 }
 
+fn extract_download_url(data: &Value) -> Option<String> {
+    if let Some(url) = data.get("url").and_then(|v| v.as_str()) {
+        return Some(url.to_string());
+    }
+    if let Some(result) = data.get("result") {
+        if let Some(url) = result.as_str() {
+            return Some(url.to_string());
+        }
+        if let Some(array) = result.as_array() {
+            if let Some(first) = array.get(0) {
+                if let Some(url) = first.get("url").and_then(|v| v.as_str()) {
+                    return Some(url.to_string());
+                }
+            }
+        }
+    }
+    None
+}
+
+fn sanitize_filename(raw: &str) -> String {
+    let cleaned: String = raw
+        .chars()
+        .filter(|&c| {
+            !c.is_ascii_control()
+                && !matches!(c, '/' | '\\' | '<' | '>' | ':' | '"' | '|' | '?' | '*')
+        })
+        .collect();
+    let trimmed = cleaned.trim_matches(|c: char| c == '.' || c.is_whitespace());
+    if trimmed.is_empty() {
+        "download".to_string()
+    } else if trimmed.len() > 200 {
+        trimmed[..200].to_string()
+    } else {
+        trimmed.to_string()
+    }
+}
+
+fn unique_download_path(dir: &Path, filename: &str) -> PathBuf {
+    let candidate = dir.join(filename);
+    if !candidate.exists() {
+        return candidate;
+    }
+    let path = Path::new(filename);
+    let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or(filename);
+    let ext = path.extension().and_then(|e| e.to_str());
+    for n in 1u32..=999 {
+        let name = match ext {
+            Some(e) => format!("{} ({}).{}", stem, n, e),
+            None => format!("{} ({})", stem, n),
+        };
+        let candidate = dir.join(&name);
+        if !candidate.exists() {
+            return candidate;
+        }
+    }
+    candidate
+}
+
 /// POST /api/v2/galleries/{id}/download — get download URL
 #[tauri::command]
 pub async fn api_get_download_url(id: u32) -> Result<Value, String> {
     api_post(&format!("galleries/{}/download", id)).await
+}
+
+#[tauri::command]
+pub async fn api_download_gallery(id: u32) -> Result<String, String> {
+    let data = api_post(&format!("galleries/{}/download", id)).await?;
+    let download_url = extract_download_url(&data)
+        .ok_or_else(|| "Download URL unavailable".to_string())?;
+
+    let mut download_req = client()
+        .get(&download_url)
+        .timeout(Duration::from_secs(300))
+        .header("Referer", "https://nhentai.net/")
+        .header("User-Agent", UA);
+    if let Some(c) = build_cookie_header() {
+        download_req = download_req.header("Cookie", c);
+    }
+    if let Some(a) = build_auth_header() {
+        download_req = download_req.header("Authorization", a);
+    }
+
+    let resp = download_req
+        .send()
+        .await
+        .map_err(|e| format!("HTTP error: {}", e))?;
+    let status = resp.status();
+    if !status.is_success() {
+        let body = resp.text().await.unwrap_or_default();
+        return Err(format!("HTTP {}: {}", status.as_u16(), body));
+    }
+
+    let filename = if let Some(cd) = resp.headers().get(reqwest::header::CONTENT_DISPOSITION).and_then(|v| v.to_str().ok()) {
+        cd.split(';')
+            .find_map(|part| {
+                let part = part.trim();
+                if let Some(stripped) = part.strip_prefix("filename=") {
+                    Some(stripped.trim_matches('"').to_string())
+                } else {
+                    None
+                }
+            })
+    } else {
+        None
+    };
+    let filename = filename.unwrap_or_else(|| {
+        std::path::Path::new(&download_url)
+            .file_name()
+            .and_then(|n| n.to_str())
+            .map(|s| s.to_string())
+            .unwrap_or_else(|| format!("nhentai_{}.zip", id))
+    });
+    let filename = sanitize_filename(&filename);
+
+    let downloads = download_dir()
+        .or_else(|| home_dir().map(|h| h.join("Downloads")))
+        .ok_or_else(|| "Unable to locate Downloads folder".to_string())?;
+    if !downloads.exists() {
+        fs::create_dir_all(&downloads).map_err(|e| format!("Failed to create download folder: {}", e))?;
+    }
+    let path = unique_download_path(&downloads, &filename);
+    let file = fs::File::create(&path).map_err(|e| format!("Failed to create download file: {}", e))?;
+    let mut writer = BufWriter::new(file);
+    let mut response = resp;
+    while let Some(chunk) = response
+        .chunk()
+        .await
+        .map_err(|e| format!("Read error: {}", e))?
+    {
+        writer
+            .write_all(&chunk)
+            .map_err(|e| format!("Write error: {}", e))?;
+    }
+    Ok(path.to_string_lossy().to_string())
 }
 
 // -- Search --------------------------------------------------------------------
@@ -424,6 +559,14 @@ fn urlenc(s: &str) -> String {
 /// Returns base64-encoded image data with MIME type.
 #[tauri::command]
 pub async fn api_fetch_image_base64(url: String) -> Result<serde_json::Value, String> {
+    if let Some((mime, data)) = crate::ext::database::db_get_image_cache(&url)? {
+        if !mime.trim().is_empty() && !data.is_empty() {
+            let b64 = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &data);
+            return Ok(serde_json::json!({ "mime": mime, "data": b64 }));
+        }
+        let _ = crate::ext::database::db_delete_image_cache(url.clone());
+    }
+
     let cookie_hdr = build_cookie_header();
     let mut req = client()
         .get(&url)
@@ -437,13 +580,50 @@ pub async fn api_fetch_image_base64(url: String) -> Result<serde_json::Value, St
     if !status.is_success() {
         return Err(format!("HTTP {}: Failed to fetch image", status.as_u16()));
     }
-    let mime = resp
+
+    let content_type = resp
         .headers()
-        .get("content-type")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("image/jpeg")
-        .to_string();
+        .get(reqwest::header::CONTENT_TYPE)
+        .and_then(|ct| ct.to_str().ok())
+        .and_then(|ct| ct.split(';').next())
+        .map(|ct| ct.trim().to_lowercase());
+
     let bytes = resp.bytes().await.map_err(|e| format!("Read error: {}", e))?;
-    let b64 = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes);
+
+    let mime = match content_type.as_deref() {
+        Some("image/png") => "image/png".to_string(),
+        Some("image/jpeg") => "image/jpeg".to_string(),
+        Some("image/jpg") => "image/jpeg".to_string(),
+        Some("image/gif") => "image/gif".to_string(),
+        Some("image/webp") => "image/webp".to_string(),
+        Some("image/bmp") => "image/bmp".to_string(),
+        Some("image/x-icon") => "image/x-icon".to_string(),
+        Some("image/vnd.microsoft.icon") => "image/x-icon".to_string(),
+        Some("image/tiff") => "image/tiff".to_string(),
+        Some("image/avif") => "image/avif".to_string(),
+        Some(m) if m.starts_with("image/") => m.to_string(),
+        _ => {
+            let format = guess_format(&bytes).map_err(|e| format!("Image format detection failed: {}", e))?;
+            match format {
+                ImageFormat::Png => "image/png".to_string(),
+                ImageFormat::Jpeg => "image/jpeg".to_string(),
+                ImageFormat::Gif => "image/gif".to_string(),
+                ImageFormat::WebP => "image/webp".to_string(),
+                ImageFormat::Bmp => "image/bmp".to_string(),
+                ImageFormat::Ico => "image/x-icon".to_string(),
+                ImageFormat::Tiff => "image/tiff".to_string(),
+                ImageFormat::Avif => "image/avif".to_string(),
+                _ => return Err("Unable to determine image MIME type".to_string()),
+            }
+        }
+    };
+
+    if bytes.is_empty() {
+        return Err("Image response was empty".to_string());
+    }
+
+    let data = bytes.to_vec();
+    let _ = crate::ext::database::db_save_image_cache(&url, &mime, &data);
+    let b64 = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &data);
     Ok(serde_json::json!({ "mime": mime, "data": b64 }))
 }

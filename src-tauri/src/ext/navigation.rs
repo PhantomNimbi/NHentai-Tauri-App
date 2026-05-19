@@ -37,6 +37,10 @@ pub fn build_navigation_init(app_origin: &str) -> String {
         }});
     }}
 
+    function log(who, url) {{
+        try {{ console.log('[nhentai-nav]', who, url); }} catch (_) {{}}
+    }}
+
     /* ------------------------------------------------------------------ */
     /*  Login redirect — auto-return to app after successful login.       */
     /*  Uses sessionStorage so the flag survives SPA navigations but not  */
@@ -46,7 +50,7 @@ pub fn build_navigation_init(app_origin: &str) -> String {
     var currentPath = window.location.pathname;
     var isLoginPage = currentPath === '/login' || currentPath.startsWith('/login/');
     var isSite = window.location.hostname === SITE_HOSTNAME ||
-                 window.location.hostname.endsWith('.' + SITE_HOSTNAME);
+                 window.location.hostname === 'www.' + SITE_HOSTNAME;
 
     /* ------------------------------------------------------------------ */
     /*  Cookie forwarding — send WebView cookies to Rust reqwest client   */
@@ -150,7 +154,7 @@ pub fn build_navigation_init(app_origin: &str) -> String {
                     var parsed = new URL(url, window.location.href);
                     return (
                         parsed.hostname === SITE_HOSTNAME ||
-                        parsed.hostname.endsWith('.' + SITE_HOSTNAME)
+                        parsed.hostname === 'www.' + SITE_HOSTNAME
                     );
                 }} catch (_) {{
                     return false;
@@ -235,7 +239,7 @@ pub fn build_navigation_init(app_origin: &str) -> String {
             var parsed = new URL(url, window.location.href);
             return (
                 parsed.hostname === SITE_HOSTNAME ||
-                parsed.hostname.endsWith('.' + SITE_HOSTNAME)
+                parsed.hostname === 'www.' + SITE_HOSTNAME
             );
         }} catch (_) {{
             return false;

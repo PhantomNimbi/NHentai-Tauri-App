@@ -10,7 +10,7 @@ The app uses a **custom frontend** for browsing, searching, tag management, and 
 
 ```
 ┌─────────────────────────────────────────────────┐
-│  Custom Frontend (frontend/index.html)           │
+│  Custom Frontend (src/index.html)           │
 │  Home · Search · Tags · Reader · Favorites      │
 │  History · Settings (API key, language, etc.)   │
 ├─────────────────────────────────────────────────┤
@@ -31,9 +31,9 @@ The app uses a **custom frontend** for browsing, searching, tag management, and 
 
 **Data flow:**
 
-1. App starts → loads `frontend/index.html` (custom SPA)
+1. App starts → loads `src/index.html` (custom SPA)
 2. Frontend calls Tauri `invoke('api_search', ...)` etc.
-3. Rust backend makes HTTP requests to `nhentai.net/api/v2/...` via reqwest
+3. Rust backend makes HTTPS requests to `nhentai.net/api/v2/...` via reqwest with rustls TLS support
 4. Responses are cached in SQLite (`gallery_cache`, `search_cache`) with pre-computed image URLs
 5. Frontend renders gallery grids and the in-app reader from DB-backed data
 6. Login flows through nhentai.net `/login/` in the WebView
@@ -53,7 +53,7 @@ This app is designed as a desktop-only client for nhentai.net and does not inclu
 
 ## 🧩 Module architecture
 
-### 📁 `frontend/` — Complete single-page app
+### 📁 `src/` — Complete single-page app
 
 | Aspect | Detail |
 |---|---|

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use rusqlite::{params, Connection};
+use rusqlite::{params, params_from_iter, Connection};
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Manager};
 
@@ -47,6 +47,13 @@ pub fn init_database(app: &AppHandle) -> Result<(), Box<dyn std::error::Error>> 
         CREATE TABLE IF NOT EXISTS gallery_cache (
             gallery_id INTEGER PRIMARY KEY,
             data TEXT NOT NULL,
+            updated_at INTEGER NOT NULL
+        );
+
+        CREATE TABLE IF NOT EXISTS image_cache (
+            url TEXT PRIMARY KEY,
+            mime TEXT NOT NULL,
+            data BLOB NOT NULL,
             updated_at INTEGER NOT NULL
         );
 
@@ -323,6 +330,40 @@ pub fn db_set_setting(key: String, value: String) -> Result<(), String> {
 // Gallery cache operations
 // ---------------------------------------------------------------------------
 
+pub fn db_get_image_cache(url: &str) -> Result<Option<(String, Vec<u8>)>, String> {
+    let conn = db().lock().map_err(|e| e.to_string())?;
+    let mut stmt = conn
+        .prepare("SELECT mime, data FROM image_cache WHERE url = ?1")
+        .map_err(|e| e.to_string())?;
+    let mut rows = stmt.query(params![url]).map_err(|e| e.to_string())?;
+    if let Some(row) = rows.next().map_err(|e| e.to_string())? {
+        let mime: String = row.get(0).map_err(|e| e.to_string())?;
+        let data: Vec<u8> = row.get(1).map_err(|e| e.to_string())?;
+        Ok(Some((mime, data)))
+    } else {
+        Ok(None)
+    }
+}
+
+pub fn db_save_image_cache(url: &str, mime: &str, data: &[u8]) -> Result<(), String> {
+    let conn = db().lock().map_err(|e| e.to_string())?;
+    conn.execute(
+        "INSERT INTO image_cache (url, mime, data, updated_at) VALUES (?1, ?2, ?3, ?4)
+         ON CONFLICT(url) DO UPDATE SET mime = excluded.mime, data = excluded.data, updated_at = excluded.updated_at",
+        params![url, mime, data, chrono_now()],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
+pub fn db_delete_image_cache(url: String) -> Result<(), String> {
+    let conn = db().lock().map_err(|e| e.to_string())?;
+    conn.execute("DELETE FROM image_cache WHERE url = ?1", params![url])
+        .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
 #[tauri::command]
 pub fn db_get_gallery_cache(gallery_id: i64) -> Result<Option<String>, String> {
     let conn = db().lock().map_err(|e| e.to_string())?;
@@ -334,6 +375,25 @@ pub fn db_get_gallery_cache(gallery_id: i64) -> Result<Option<String>, String> {
         )
         .ok();
     Ok(result)
+}
+
+#[tauri::command]
+pub fn db_get_gallery_cache_bulk(gallery_ids: Vec<i64>) -> Result<Vec<(i64, String)>, String> {
+    if gallery_ids.is_empty() {
+        return Ok(Vec::new());
+    }
+    let conn = db().lock().map_err(|e| e.to_string())?;
+    let placeholders = gallery_ids.iter().map(|_| "?").collect::<Vec<_>>().join(",");
+    let sql = format!("SELECT gallery_id, data FROM gallery_cache WHERE gallery_id IN ({})", placeholders);
+    let mut stmt = conn.prepare(&sql).map_err(|e| e.to_string())?;
+    let rows = stmt
+        .query_map(params_from_iter(gallery_ids.iter()), |row| Ok((row.get(0)?, row.get(1)?)))
+        .map_err(|e| e.to_string())?;
+    let mut results = Vec::new();
+    for row in rows {
+        results.push(row.map_err(|e| e.to_string())?);
+    }
+    Ok(results)
 }
 
 #[tauri::command]

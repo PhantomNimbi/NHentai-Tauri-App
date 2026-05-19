@@ -1,6 +1,6 @@
 # 🏠 NHentai Tauri App
 
-**🚀 Current release:** [v1.0.0](CHANGELOG.md#v100---2026-05-18) • **Updated:** 2026-05-18
+**🚀 Current release:** [v1.0.1](CHANGELOG.md#v101---2026-05-19) • **Updated:** 2026-05-19
 
 A native desktop client for [nhentai.net](https://nhentai.net) — built with **Tauri v2** and **Rust**.  
 Custom API-driven frontend for browsing; WebView for gallery reading.
@@ -11,6 +11,7 @@ Custom API-driven frontend for browsing; WebView for gallery reading.
 - 🏷️ Tag Filter page now uses live API data instead of local DB tag population
 - 🔁 Home `All` sort is the only sort that applies active tag filters
 - 🚫 Removed custom backend rate limiting; requests now flow without artificial delay
+- 🔒 Added rustls TLS-backed reqwest support for HTTPS API calls to nhentai.net
 - 📖 Improved search, reader, cache, and API command behavior for a more reliable app experience
 
 ---
@@ -64,7 +65,7 @@ cargo tauri dev
 
 ```
 nhentai-tauri-app/
-├── frontend/
+├── src/
 │   └── index.html               # Custom app UI (API-driven)
 ├── src-tauri/
 │   ├── src/

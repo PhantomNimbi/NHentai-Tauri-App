@@ -1,6 +1,6 @@
 # 🏠 NHentai Tauri App
 
-> **Version:** v1.0.0 · **Updated:** 2026-05-18
+> **Version:** v1.0.1 · **Updated:** 2026-05-19
 
 A native desktop client for [nhentai.net](https://nhentai.net) — built with **Tauri v2** and **Rust** — featuring a custom API-driven frontend for browsing, searching, and reading galleries.
 
@@ -14,7 +14,7 @@ This app replaces nhentai.net with a **custom frontend** that uses the nhentai A
 - 🏷️ **Three-state tag system** — DEFAULT (neutral), ACCEPTED (required), AVOIDED (excluded)
 - 🔁 **Home sort behavior** — tag filters only apply when Home is set to `All`, preventing unintended filtering on other sorts
 - 📖 **In-app reader** — Read galleries entirely within the app with keyboard shortcuts
-- 🔌 **Rust-proxied API** — All API calls go through reqwest (bypasses WebView CORS)
+- 🔌 **Rust-proxied API** — All API calls go through reqwest with rustls TLS support (bypasses WebView CORS)
 - 🔑 **API key support** — Optional `Authorization: Key` header for authenticated access
 - 💾 **SQLite persistence** — Tags, history, favorites, settings, gallery cache, search cache
 - 📄 **Gallery & search caching** — Full API response caching with pre-computed image URLs
@@ -33,7 +33,7 @@ This app replaces nhentai.net with a **custom frontend** that uses the nhentai A
 | 📖 **In-app reader** | Page-by-page gallery reading with click areas and keyboard shortcuts |
 | 💾 **SQLite database** | All data persisted — tags, history, favorites, settings, gallery + search cache |
 | 🔑 **API key** | Optional nhentai API key for authenticated requests, persisted in DB settings |
-| 🔌 **Rust API proxy** | reqwest HTTP client bypasses WebView CORS; shared cookie jar + API key header |
+| 🔌 **Rust API proxy** | reqwest HTTP client with rustls TLS, bypasses WebView CORS; shared cookie jar + API key header |
 | 📦 **Gallery cache** | Full gallery detail + pre-computed page image URLs cached in DB |
 | 🔍 **Search cache** | Search/home results + pre-computed cover URLs cached in DB |
 | 🛡️ **Anti-bot** | Chrome 126 User-Agent for Cloudflare challenge avoidance |
@@ -62,7 +62,7 @@ This app replaces nhentai.net with a **custom frontend** that uses the nhentai A
 
 ```
 nhentai-tauri-app/
-├── frontend/
+├── src/
 │   └── index.html              # Complete SPA (reader, tags, settings, etc.)
 ├── src-tauri/
 │   ├── src/

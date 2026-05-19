@@ -42,7 +42,7 @@ cargo tauri build
 
 ```
 nhentai-tauri-app/
-├── frontend/
+├── src/
 │   └── index.html              # Complete SPA (reader, tags, settings, etc.)
 ├── src-tauri/
 │   ├── src/
@@ -85,7 +85,7 @@ cargo test -- --nocapture
 
 ### Adding a new feature to the frontend
 
-1. Edit `frontend/index.html` — all JS/CSS/HTML in one file
+1. Edit `src/index.html` — all JS/CSS/HTML in one file
 2. Test by running `cargo tauri dev`
 3. If adding a new IPC call, register the command in `lib.rs`
 
@@ -101,8 +101,8 @@ cargo test -- --nocapture
 ### Modifying the API layer
 
 The API client lives in:
-- **Frontend**: `frontend/index.html` — `invoke('api_*')` calls
-- **Backend**: `src-tauri/src/ext/api.rs` — reqwest commands + auth headers
+- **Frontend**: `src/index.html` — `invoke('api_*')` calls
+- **Backend**: `src-tauri/src/ext/api.rs` — reqwest commands + auth headers (rustls TLS-enabled)
 - Tag Filter now fetches tags via API listings and does not rely on local DB tag population
 - Home sort `All` is treated as the only sort where tag filters are applied; other sorts ignore active tag filters
 - To add a new endpoint: add a `#[tauri::command]` function in api.rs, call `api_get(&path)` inside
@@ -176,7 +176,7 @@ The app uses `println!` for debug output (visible in the terminal running `cargo
 | WebView2 COM calls fail if webview isn't initialized | Always handle `Result` errors, never `.unwrap()` |
 | API returns 403 | Ensure API key is set in Settings; the app sends `Authorization: Key` header |
 | Cover images broken on tab switch | `ensureGalleryUrls` pre-computes URLs before caching; try clearing search cache |
-| Frontend not loading | Check `frontendDist` in `tauri.conf.json` points to `../frontend` |
+| Frontend not loading | Check `frontendDist` in `tauri.conf.json` points to `../src` |
 
 ---
 

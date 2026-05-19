@@ -1,6 +1,6 @@
 [package]
 name = "nhentai"
-version = "1.0.0"
+version = "1.0.1"
 description = "NHentai doujinshi reader - Doujinshi, manga, and artbooks"
 authors = ["Joshua V. Lewis"]
 edition = "2021"
@@ -31,6 +31,8 @@ url = "2"
 webview2-com = "0.38"
 windows-core = "0.61"
 rusqlite = { version = "0.31", features = ["bundled"] }
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
 tokio = { version = "1", features = ["time"] }
 base64 = "0.22"
+image = { version = "0.24", features = ["png", "jpeg", "gif", "webp"] }
+dirs-next = "2"

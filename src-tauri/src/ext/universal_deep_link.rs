@@ -5,10 +5,10 @@ use tauri::{AppHandle, Listener, Manager};
 use tauri_plugin_deep_link::DeepLinkExt;
 use url::Url;
 
-/// Initializes universal deep-link handling for both desktop and mobile.
+/// Initializes universal deep-link handling for desktop.
 ///
 /// Supports both the custom scheme `nhentai://...` and HTTPS Universal
-/// Links targeting `https://nhentai.net//...`.
+/// Links targeting `https://nhentai.net/...` or `https://www.nhentai.net/...`.
 pub fn init_universal_deep_link(app: AppHandle) -> Result<(), Box<dyn Error>> {
     let handle = app.clone();
     let listener_handle = handle.clone();
@@ -33,7 +33,7 @@ pub fn init_universal_deep_link(app: AppHandle) -> Result<(), Box<dyn Error>> {
 fn handle_deep_link(app: &AppHandle, url: &Url) {
     let target = match url.scheme() {
         "nhentai" => map_nhentai_scheme(url),
-        "https" if url.host_str() == Some("nhentai.net") => url.clone(),
+        "https" if url.host_str() == Some("nhentai.net") || url.host_str() == Some("www.nhentai.net") => url.clone(),
         _ => return,
     };
 
