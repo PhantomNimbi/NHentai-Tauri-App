@@ -21,7 +21,7 @@
 
 ## 🚀 Quick start
 
-```bash
+```sh
 # Clone the repository
 git clone https://github.com/PhantomNimbi/NHentai-Tauri-App.git
 cd nhentai-tauri-app
@@ -40,37 +40,34 @@ cargo tauri build
 
 ## 📁 Project structure
 
-```
+```sql
 nhentai-tauri-app/
 ├── src/
-│   └── index.html              # Complete SPA (reader, tags, settings, etc.)
+│   └── index.html                        # Custom app UI (API-driven)
 ├── src-tauri/
 │   ├── src/
-│   │   ├── main.rs             # Binary entry point
-│   │   ├── lib.rs              # App setup, run() for desktop only
+│   │   ├── lib.rs                        # App setup, command registration
+│   │   ├── main.rs                       # Binary entrypoint
 │   │   └── ext/
-│   │       ├── mod.rs          # Module declarations with platform #[cfg]
-│   │       ├── api.rs          # reqwest HTTP client + all v2 API commands
-│   │       ├── database.rs     # SQLite schema + all CRUD commands
-│   │       ├── navigation.rs   # Link handling + login auto-redirect
-│   │       ├── tag_blacklist.rs# Three-state tag toggle on nhentai.net pages
-│   │       ├── cloudfare.rs    # Cloudflare UA spoofing + COM headers
-│   │       ├── context_menu.rs # Native right-click (desktop-only)
-│   │       ├── downloads.rs    # Download interception + sanitization
-│   │       ├── tray.rs         # System tray (desktop-only)
-│   │       ├── global_shortcuts.rs # Global hotkeys (desktop-only)
-│   │       ├── webnotifications.rs # Notification permissions
-│   │       └── universal_deep_link.rs # nhentai:// handler
+│   │       ├── adblock.rs                # JS-level ad blocking (tsyndicate.com)
+│   │       ├── tag_blacklist.rs          # Tag blacklisting (nhentai.net pages)
+│   │       ├── cloudfare.rs              # Cloudflare UA spoofing
+│   │       ├── navigation.rs             # Link handling + Back to App button
+│   │       ├── context_menu.rs           # Native right-click menu (desktop)
+│   │       ├── downloads.rs              # Download interception
+│   │       ├── tray.rs                   # System tray (desktop)
+│   │       ├── global_shortcuts.rs       # Global shortcuts (desktop)
+│   │       ├── webnotifications.rs       # Notification permissions
+│   │       └── universal_deep_link.rs    # Deep link handler
 │   ├── Cargo.toml
 │   └── tauri.conf.json
-└── docs/
-```
+└── docs
 
 ---
 
 ## 🧪 Testing
 
-```bash
+```sh
 # Run all Rust unit tests
 cd src-tauri
 cargo test
@@ -126,7 +123,7 @@ All SQLite operations are in `src-tauri/src/ext/database.rs`:
 
 ## 🏗️ Building platform-specific releases
 
-```bash
+```sh
 # Windows
 cargo tauri build
 
