@@ -1,0 +1,41 @@
+# --- Tauri / Rust build outputs ---
+/target/
+/src-tauri/target/
+**/target/
+
+# --- Node (if present in repo root) ---
+node_modules/
+dist/
+build/
+
+# --- Tauri env files (do not commit secrets) ---
+*.env
+.env
+.env.*.local
+src-tauri/.env
+src-tauri/.env.local
+src-tauri/.env.*.local
+!.docker.env
+
+# --- Generated artifacts / logs ---
+*release-notes.txt
+
+# Cargo lockfiles / misc backups ---
+**/*.rs.bk
+
+# --- OS / editor noise ---
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.zip
+
+.vscode/
+.idea/
+
+# --- Sixth tool / local caches ---
+.sixth/
+
+# Ignore local or SDK artifacts that should not be committed
+.github/Xcode_26.5_Release_Candidate_Apple_silicon.xip
+
