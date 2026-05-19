@@ -16,8 +16,6 @@
 - **Windows**: WebView2 Runtime (included in Windows 11)
 - **macOS**: Xcode Command Line Tools
 - **Linux**: WebKitGTK, libsoup, and other Tauri v2 Linux dependencies
-- **Android**: Android SDK + NDK, Java 17+, Gradle
-- **iOS**: Xcode 15+, CocoaPods
 
 ---
 
@@ -49,7 +47,7 @@ nhentai-tauri-app/
 ├── src-tauri/
 │   ├── src/
 │   │   ├── main.rs             # Binary entry point
-│   │   ├── lib.rs              # App setup, run() for desktop + mobile
+│   │   ├── lib.rs              # App setup, run() for desktop only
 │   │   └── ext/
 │   │       ├── mod.rs          # Module declarations with platform #[cfg]
 │   │       ├── api.rs          # reqwest HTTP client + all v2 API commands

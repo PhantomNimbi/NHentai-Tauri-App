@@ -26,7 +26,7 @@ This document provides detailed instructions for AI agents working on the NHenta
 
 ### Code Organization
 - `src-tauri/`: Contains platform-specific configuration and build scripts (single source for all platforms)
-- `src-tauri/src/lib.rs`: Main application entry point and setup for desktop and mobile (desktop features plus `#[tauri::mobile_entry_point]` support)
+- `src-tauri/src/lib.rs`: Main application entry point and setup for desktop only
 - Feature modules: Each major feature gets its own file in `src-tauri/src/ext/` (navigation.rs, downloads.rs, api.rs, database.rs, etc.)
 - `frontend/index.html`: Complete single-page app — API-driven browsing, search, tag filter with three-state toggles, favorites, history, settings (including API key input), and in-app gallery reader. The app loads this instead of nhentai.net directly. nhentai.net is only loaded in the WebView for login pages.
 - Three-state tag system: DEFAULT (0), ACCEPTED (2), AVOIDED (1). Tags cycle through these states on click.
@@ -52,17 +52,8 @@ cargo install tauri-cli --version "^2" --locked
 # Desktop development
 cargo tauri dev
 
-# Android development
-cargo tauri dev --target <android-target>
-
-# iOS development
-cargo tauri dev --target <ios-target>
-
 # For release builds (desktop)
 cargo tauri build
-
-# For release builds (mobile)
-cargo tauri build --target <target-triple>
 ```
 
 ### Making Changes

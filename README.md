@@ -95,5 +95,3 @@ nhentai-tauri-app/
 | Windows | `x86_64-pc-windows-msvc` | ✅ Full support |
 | macOS | `aarch64-apple-darwin` | ✅ Full support |
 | Linux | `x86_64-unknown-linux-gnu` | ✅ Full support |
-| Android | `aarch64-linux-android` + ARMv7 + i686 + x86_64 | ⚠️ Website wrapper (no custom UI) |
-| iOS | `aarch64-apple-ios` | ⚠️ Website wrapper (no custom UI) |
