@@ -8,8 +8,7 @@
 
 The app uses a **custom frontend** for browsing, searching, tag management, and gallery reading, with nhentai.net loaded in the WebView only for login pages.
 
-<div align=center>
-<pre>
+```sql
 ┌─────────────────────────────────────────────────┐
 │  Custom Frontend (src/index.html)               │
 │  Home · Search · Tags · Reader · Favorites      │
@@ -25,11 +24,10 @@ The app uses a **custom frontend** for browsing, searching, tag management, and 
 │  │cloudfare │ │tray.rs   │ │downloads.rs  │     │
 │  └──────────┘ └──────────┘ └──────────────┘     │
 ├─────────────────────────────────────────────────┤
-│       Native Platform Layer                     │
+│  Native Platform Layer                          │
 │  WebView2 · WKWebView · GTK                     │
 └─────────────────────────────────────────────────┘
-</pre>
-</div>
+```
 
 **Data flow:**
 
