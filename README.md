@@ -35,7 +35,7 @@ This app replaces the nhentai.net browsing experience with a **custom frontend**
 
 ## 🚀 Quick start
 
-```bash
+```sh
 # 1. Install Tauri CLI
 cargo install tauri-cli --version "^2" --locked
 
