@@ -65,25 +65,25 @@ cargo tauri dev
 
 ## 📁 Project structure
 
-```
+```sql
 nhentai-tauri-app/
 ├── src/
-│   └── index.html               # Custom app UI (API-driven)
+│   └── index.html                        # Custom app UI (API-driven)
 ├── src-tauri/
 │   ├── src/
-│   │   ├── lib.rs                # App setup, command registration
-│   │   ├── main.rs               # Binary entrypoint
+│   │   ├── lib.rs                        # App setup, command registration
+│   │   ├── main.rs                       # Binary entrypoint
 │   │   └── ext/
-│   │       ├── adblock.rs        # JS-level ad blocking (tsyndicate.com)
-│   │       ├── tag_blacklist.rs  # Tag blacklisting (nhentai.net pages)
-│   │       ├── cloudfare.rs      # Cloudflare UA spoofing
-│   │       ├── navigation.rs     # Link handling + Back to App button
-│   │       ├── context_menu.rs   # Native right-click menu (desktop)
-│   │       ├── downloads.rs      # Download interception
-│   │       ├── tray.rs           # System tray (desktop)
-│   │       ├── global_shortcuts.rs # Global shortcuts (desktop)
-│   │       ├── webnotifications.rs # Notification permissions
-│   │       └── universal_deep_link.rs # Deep link handler
+│   │       ├── adblock.rs                # JS-level ad blocking (tsyndicate.com)
+│   │       ├── tag_blacklist.rs          # Tag blacklisting (nhentai.net pages)
+│   │       ├── cloudfare.rs              # Cloudflare UA spoofing
+│   │       ├── navigation.rs             # Link handling + Back to App button
+│   │       ├── context_menu.rs           # Native right-click menu (desktop)
+│   │       ├── downloads.rs              # Download interception
+│   │       ├── tray.rs                   # System tray (desktop)
+│   │       ├── global_shortcuts.rs       # Global shortcuts (desktop)
+│   │       ├── webnotifications.rs       # Notification permissions
+│   │       └── universal_deep_link.rs    # Deep link handler
 │   ├── Cargo.toml
 │   └── tauri.conf.json
 └── docs/
