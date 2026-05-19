@@ -16,7 +16,7 @@ This app replaces nhentai.net with a **custom frontend** that uses the nhentai A
 - 📖 **In-app reader** — Read galleries entirely within the app with keyboard shortcuts
 - 🔌 **Rust-proxied API** — All API calls go through reqwest with rustls TLS support (bypasses WebView CORS)
 - 🔑 **API key support** — Optional `Authorization: Key` header for authenticated access
-- 📱 **Android users** — See https://github.com/maxwai/NClientV3 for the dedicated Android client.
+- 📱 **Android users** — See https://github.com/maxwai/NClientV3 for a dedicated Android client.
 - 💾 **SQLite persistence** — Tags, history, favorites, settings, gallery cache, search cache
 - 📄 **Gallery & search caching** — Full API response caching with pre-computed image URLs
 - 🔗 **Smart navigation** — External links open in system browser; internal handled in-app

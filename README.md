@@ -12,7 +12,7 @@ Custom API-driven frontend for browsing; WebView for gallery reading.
 - 🔁 Home `All` sort is the only sort that applies active tag filters
 - 🚫 Removed custom backend rate limiting; requests now flow without artificial delay
 - 🔒 Added rustls TLS-backed reqwest support for HTTPS API calls to nhentai.net
-- 📱 Android users should visit https://github.com/maxwai/NClientV3 for the dedicated Android client.
+- 📱 Android users should visit https://github.com/maxwai/NClientV3 for a dedicated Android client.
 - 🧠 Updated docs and AI agent guidance to enforce correct nhentai v2 API usage, root-cause fixes, and confirm-before-save behavior
 - 📖 Improved search, reader, cache, and API command behavior for a more reliable app experience
 
