@@ -61,27 +61,27 @@ This app replaces nhentai.net with a **custom frontend** that uses the nhentai A
 
 ## 📂 Project layout
 
-```
+```sql
 nhentai-tauri-app/
 ├── src/
-│   └── index.html              # Complete SPA (reader, tags, settings, etc.)
+│   └── index.html                      # Complete SPA (reader, tags, settings, etc.)
 ├── src-tauri/
 │   ├── src/
-│   │   ├── main.rs             # Binary entrypoint
-│   │   ├── lib.rs              # App setup, command registration, init script
+│   │   ├── main.rs                     # Binary entrypoint
+│   │   ├── lib.rs                      # App setup, command registration, init script
 │   │   └── ext/
-│   │       ├── mod.rs          # Module declarations
-│   │       ├── api.rs          # reqwest HTTP client + all v2 API commands
-│   │       ├── database.rs     # SQLite schema + all CRUD commands
-│   │       ├── navigation.rs   # Link handling + login auto-redirect
-│   │       ├── tag_blacklist.rs# Three-state tag toggle on nhentai.net pages
-│   │       ├── cloudfare.rs    # Cloudflare UA spoofing + COM headers
-│   │       ├── context_menu.rs # Native right-click menu
-│   │       ├── downloads.rs    # Download interception + sanitization
-│   │       ├── tray.rs         # System tray (desktop)
-│   │       ├── global_shortcuts.rs # Global shortcuts (desktop)
-│   │       ├── webnotifications.rs # Notification permissions
-│   │       └── universal_deep_link.rs # Deep link handler
+│   │       ├── mod.rs                  # Module declarations
+│   │       ├── api.rs                  # reqwest HTTP client + all v2 API commands
+│   │       ├── database.rs             # SQLite schema + all CRUD commands
+│   │       ├── navigation.rs           # Link handling + login auto-redirect
+│   │       ├── tag_blacklist.rs        # Three-state tag toggle on nhentai.net pages
+│   │       ├── cloudfare.rs            # Cloudflare UA spoofing + COM headers
+│   │       ├── context_menu.rs         # Native right-click menu
+│   │       ├── downloads.rs            # Download interception + sanitization
+│   │       ├── tray.rs                 # System tray (desktop)
+│   │       ├── global_shortcuts.rs     # Global shortcuts (desktop)
+│   │       ├── webnotifications.rs     # Notification permissions
+│   │       └── universal_deep_link.rs  # Deep link handler
 │   ├── Cargo.toml
 │   └── tauri.conf.json
 ├── docs/
