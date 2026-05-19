@@ -8,26 +8,28 @@
 
 The app uses a **custom frontend** for browsing, searching, tag management, and gallery reading, with nhentai.net loaded in the WebView only for login pages.
 
-```
+<div align=center>
+<pre>
 ┌─────────────────────────────────────────────────┐
-│  Custom Frontend (src/index.html)           │
+│  Custom Frontend (src/index.html)               │
 │  Home · Search · Tags · Reader · Favorites      │
 │  History · Settings (API key, language, etc.)   │
 ├─────────────────────────────────────────────────┤
-│          Tauri IPC bridge (invoke)               │
+│          Tauri IPC bridge (invoke)              │
 ├─────────────────────────────────────────────────┤
-│              Rust Backend (src-tauri/)           │
-│  ┌──────────┐ ┌──────────┐ ┌──────────────┐    │
-│  │api.rs    │ │database │ │navigation.rs │    │
-│  │(reqwest) │ │(SQLite) │ │(link handle) │    │
-│  ├──────────┤ ├──────────┤ ├──────────────┤    │
-│  │cloudfare │ │tray.rs  │ │downloads.rs  │    │
-│  └──────────┘ └──────────┘ └──────────────┘    │
+│              Rust Backend (src-tauri/)          │
+│  ┌──────────┐ ┌──────────┐ ┌──────────────┐     │
+│  │api.rs    │ │database  │ │navigation.rs │     │
+│  │(reqwest) │ │(SQLite)  │ │(link handle) │     │
+│  ├──────────┤ ├──────────┤ ├──────────────┤     │
+│  │cloudfare │ │tray.rs   │ │downloads.rs  │     │
+│  └──────────┘ └──────────┘ └──────────────┘     │
 ├─────────────────────────────────────────────────┤
 │       Native Platform Layer                     │
 │  WebView2 · WKWebView · GTK                     │
 └─────────────────────────────────────────────────┘
-```
+</pre>
+</div>
 
 **Data flow:**
 
