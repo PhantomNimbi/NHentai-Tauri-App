@@ -1,0 +1,2330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>NHentai</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0d0d0f;--surface:#151517;--card:#1a1a1c;--border:#2a2a2e;--text:#d5d7de;--text-dim:#6b6d76;--accent:#6c8dbb;--accent-hover:#5a7aa8;--accept:#27ae60;--avoid:#e74c3c;--default:#6b6d76;--radius:4px;--sidebar-w:220px;--header-h:48px}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:14px;line-height:1.4;overflow-x:hidden;min-height:100vh}
+a{color:var(--accent);text-decoration:none}
+button{cursor:pointer;font:inherit;background:none;border:none;color:inherit}
+input{font:inherit}
+
+/* Header */
+.app-header{position:fixed;top:0;left:0;right:0;z-index:200;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;height:var(--header-h);padding:0 12px;gap:10px}
+.menu-btn{font-size:20px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius);color:var(--text-dim);transition:background .15s,color .15s}
+.menu-btn:hover{background:var(--card);color:var(--text)}
+.app-header h1{font-size:16px;font-weight:700;color:#fff;white-space:nowrap}
+.header-links{margin-left:auto;display:flex;gap:6px}
+
+/* Sidebar */
+.sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199;display:none}
+.sidebar-overlay.open{display:block}
+.sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sidebar-w);background:var(--surface);border-right:1px solid var(--border);z-index:300;transform:translateX(-100%);transition:transform .2s;display:flex;flex-direction:column;padding-top:var(--header-h)}
+.sidebar.open{transform:translateX(0)}
+.sidebar .nav-group{padding:8px 0}
+.sidebar .nav-group:not(:last-child){border-bottom:1px solid var(--border)}
+.sidebar .nav-group-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);padding:6px 16px 4px}
+.sidebar .nav-item{display:flex;align-items:center;gap:10px;width:100%;padding:8px 16px;font-size:13px;color:var(--text-dim);transition:background .15s,color .15s;text-align:left}
+.sidebar .nav-item:hover{background:var(--card);color:var(--text)}
+.sidebar .nav-item.active{color:#fff;background:var(--card);border-left:2px solid var(--accent)}
+.sidebar .nav-item .nav-icon{width:20px;text-align:center;font-size:14px}
+
+/* Main */
+.app-main{padding-top:var(--header-h);margin-left:0;transition:margin-left .2s;min-height:100vh}
+@media(min-width:900px){.sidebar{transform:translateX(0);box-shadow:none}.sidebar-overlay{display:none!important}.app-main{margin-left:var(--sidebar-w)}.menu-btn{display:none}}
+
+.view{display:none}
+.view.active{display:block}
+
+/* Content area */
+.content{padding:16px;max-width:1400px;margin:0 auto}
+
+/* Loading */
+.loading{text-align:center;padding:48px 0;color:var(--text-dim);font-size:14px}
+.loading::after{content:'';display:block;width:24px;height:24px;margin:12px auto;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Section header */
+.section-header{display:flex;justify-content:space-between;align-items:center;margin:24px 0 12px}
+.section-header h2{font-size:15px;font-weight:600;color:#fff}
+
+/* Sort bar */
+.sort-bar{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.sort-bar button{padding:5px 12px;border:1px solid var(--border);color:var(--text-dim);border-radius:var(--radius);font-size:12px;transition:color .15s,background .15s,border-color .15s}
+.sort-bar button:hover{color:var(--text);border-color:var(--accent)}
+.sort-bar button.active{color:#fff;background:var(--accent);border-color:var(--accent)}
+
+/* Gallery grid — clean custom cards */
+.gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:6px}
+.gallery-card{background:var(--card);overflow:hidden;cursor:pointer;border-radius:6px;transition:transform .15s;position:relative;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.gallery-card:hover{transform:translateY(-2px)}
+.gallery-card .card-img-wrap{position:relative;overflow:hidden;aspect-ratio:3/4;background:#111}
+.gallery-card .card-img-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+.gallery-card .card-caption{padding:6px 8px 2px;font-size:12px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text)}
+.gallery-card .card-info{display:flex;gap:10px;padding:2px 8px 6px;font-size:11px;color:var(--text-dim)}
+.gallery-card .card-info .lang{cursor:default}
+.gallery-card .card-info .fav{color:#f1c40f}
+.gallery-card .fav-badge{position:absolute;top:4px;right:6px;color:#f1c40f;font-size:14px;text-shadow:0 0 4px rgba(0,0,0,.8);display:none}
+.gallery-card.has-fav .fav-badge{display:block}
+
+/* Detail view related gallery cards (compact) */
+#view-detail .gallery-card .card-img-wrap{aspect-ratio:3/4;background:#111}
+#view-detail .gallery-card .card-img-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+#view-detail .gallery-card .card-caption{padding:4px 6px 2px;font-size:11px}
+#view-detail .gallery-card .card-info{padding:2px 6px 4px;font-size:10px;gap:6px}
+
+/* Pagination */
+.pagination-bar{display:flex;align-items:center;justify-content:center;gap:8px;margin:24px 0 12px;flex-wrap:wrap}
+.pagination-bar button{padding:6px 14px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:var(--radius);font-size:13px;transition:background .15s}
+.pagination-bar button:hover:not(:disabled){background:var(--accent);color:#fff}
+.pagination-bar button:disabled{opacity:.3;cursor:default}
+.pagination-bar .page-info{font-size:13px;color:var(--text-dim)}
+.pagination-bar .page-nums{display:flex;gap:4px}
+.pagination-bar .page-nums button{min-width:32px;padding:6px 8px}
+.pagination-bar .page-nums button.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+/* Search view */
+.search-bar{display:flex;gap:8px;margin-bottom:12px}
+.search-bar input{flex:1;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:14px;outline:none;transition:border-color .15s}
+.search-bar input:focus{border-color:var(--accent)}
+.search-bar button{padding:10px 20px;background:var(--accent);border:none;color:#fff;border-radius:var(--radius);font-size:14px;font-weight:600}
+.search-bar button:hover{background:var(--accent-hover)}
+
+/* Search tag chips area */
+.search-tags{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px;min-height:0}
+.search-tags .st-chip{display:flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:border-color .15s,background .15s;color:var(--text-dim)}
+.search-tags .st-chip:hover{border-color:var(--accent)}
+.search-tags .st-chip .st-status{font-size:12px}
+.search-tags .st-chip.accept{border-color:var(--accept);color:var(--accept);background:rgba(39,174,96,.08)}
+.search-tags .st-chip.avoid{border-color:var(--avoid);color:var(--avoid);background:rgba(231,76,60,.08)}
+.search-tags .st-chip .st-remove{font-size:14px;opacity:.5;transition:opacity .15s;margin-left:2px}
+.search-tags .st-chip .st-remove:hover{opacity:1}
+.search-tags .st-add{display:flex;align-items:center;gap:4px;font-size:11px;padding:3px 8px;background:var(--surface);border:1px dashed var(--border);border-radius:var(--radius);color:var(--text-dim);cursor:pointer;transition:border-color .15s}
+.search-tags .st-add:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Tag filter tabs */
+.tag-filter-tabs{display:flex;gap:0;margin-bottom:16px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.tag-filter-tabs button{padding:8px 14px;font-size:12px;color:var(--text-dim);border-bottom:2px solid transparent;transition:color .15s,border-color .15s;margin-bottom:-1px}
+.tag-filter-tabs button:hover{color:var(--text)}
+.tag-filter-tabs button.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:600}
+
+/* Tag filter list */
+.tf-search{position:relative;margin-bottom:12px}
+.tf-search input{width:100%;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;outline:none}
+.tf-search input:focus{border-color:var(--accent)}
+.tf-search-results{position:absolute;top:100%;left:0;right:0;max-height:240px;overflow-y:auto;background:var(--card);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);z-index:10}
+.tf-search-item{padding:8px 12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:13px;transition:background .15s}
+.tf-search-item:hover{background:var(--surface)}
+.tf-search-item .tsi-count{font-size:11px;color:var(--text-dim)}
+.tf-search-item .tsi-action{font-size:11px;color:var(--accent);font-weight:600}
+.tf-search-item .tsi-status{font-size:11px;font-weight:600}
+.tf-stats{font-size:12px;color:var(--text-dim);margin-bottom:12px}
+
+/* Tag filter items */
+.tf-tags{display:flex;flex-direction:column;gap:2px}
+.tf-tag{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:var(--radius);cursor:pointer;transition:background .15s;border-left:3px solid var(--default)}
+.tf-tag:hover{background:var(--card)}
+.tf-tag.accept{border-left-color:var(--accept)}
+.tf-tag.avoid{border-left-color:var(--avoid)}
+.tf-tag .tf-name{flex:1;font-size:13px}
+.tf-tag .tf-count{font-size:11px;color:var(--text-dim);min-width:40px;text-align:right}
+.tf-tag .tf-badge{font-size:10px;font-weight:600;padding:2px 6px;border-radius:8px}
+.tf-tag .tf-badge.accept{background:rgba(39,174,96,.15);color:var(--accept)}
+.tf-tag .tf-badge.avoid{background:rgba(231,76,60,.15);color:var(--avoid)}
+.tf-tag .tf-badge.default{background:rgba(107,109,118,.15);color:var(--default)}
+.tf-tag .tf-status-icon{font-size:14px;width:18px;text-align:center}
+.tf-empty{text-align:center;padding:32px;color:var(--text-dim);font-size:13px}
+
+/* Settings view */
+.settings-group{margin-bottom:20px}
+.settings-group h3{font-size:13px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.setting-row{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--card);border-radius:var(--radius);margin-bottom:4px}
+.setting-row label{font-size:13px;color:var(--text)}
+.setting-row select{padding:4px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:12px;outline:none}
+.setting-row select:focus{border-color:var(--accent)}
+.setting-row .toggle-wrap{position:relative;width:36px;height:20px}
+.setting-row .toggle-wrap input{opacity:0;width:0;height:0}
+.setting-row .toggle-slider{position:absolute;inset:0;background:var(--border);border-radius:10px;cursor:pointer;transition:background .2s}
+.setting-row .toggle-slider::before{content:'';position:absolute;left:3px;top:3px;width:14px;height:14px;background:#fff;border-radius:50%;transition:transform .2s}
+.setting-row .toggle-wrap input:checked+.toggle-slider{background:var(--accent)}
+.setting-row .toggle-wrap input:checked+.toggle-slider::before{transform:translateX(16px)}
+.setting-row .setting-desc{font-size:11px;color:var(--text-dim);margin-top:2px}
+
+/* Login */
+.login-card{background:var(--card);border-radius:var(--radius);border:1px solid var(--border);padding:24px;max-width:480px;margin:0 auto;text-align:center}
+.login-card h3{font-size:16px;font-weight:600;color:#fff;margin-bottom:8px}
+.login-card p{font-size:13px;color:var(--text-dim);margin-bottom:16px;line-height:1.5}
+.login-card .login-btn{display:inline-flex;align-items:center;gap:8px;padding:12px 28px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;transition:background .15s}
+.login-card .login-btn:hover{background:var(--accent-hover)}
+.login-card .logout-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 24px;background:var(--avoid);color:#fff;border:none;border-radius:var(--radius);font-size:13px;font-weight:600;cursor:pointer;transition:opacity .15s}
+.login-card .logout-btn:hover{opacity:.85}
+.login-card .login-status{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:var(--radius);font-size:13px;font-weight:600;margin-bottom:16px}
+.login-card .login-status.logged-in{background:rgba(39,174,96,.15);color:var(--accept)}
+.login-card .login-status.logged-out{background:rgba(107,109,118,.15);color:var(--text-dim)}
+.login-card .login-hint{font-size:12px;color:var(--text-dim);margin-top:16px;padding:12px;background:var(--surface);border-radius:var(--radius);text-align:left;line-height:1.6}
+.login-card .login-hint ol{margin:8px 0 0 20px}
+.login-card .login-hint li{margin-bottom:4px}
+.login-card .login-hint code{color:var(--accent);font-size:11px}
+.login-card .login-badge{padding:2px 8px;border-radius:3px;font-size:11px;font-weight:600}
+.login-card .login-badge.online{background:rgba(39,174,96,.15);color:var(--accept)}
+.login-card .login-badge.offline{background:rgba(107,109,118,.15);color:var(--text-dim)}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:8px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--text-dim)}
+
+/* Gallery Detail */
+.gd-top{padding:8px 0}
+.gd-back{font-size:13px;padding:6px 12px;border-radius:var(--radius);color:var(--text-dim);transition:color .15s,background .15s}
+.gd-back:hover{color:var(--text);background:var(--card)}
+.gd-layout{display:flex;gap:24px;align-items:flex-start;padding-top:8px}
+.gd-cover-wrap{width:320px;flex-shrink:0}
+.gd-cover{width:100%;aspect-ratio:350/500;background:var(--card);border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);display:flex;align-items:center;justify-content:center}
+.gd-cover img{width:100%;height:100%;object-fit:cover;display:block}
+.gd-loading{color:var(--text-dim);font-size:13px}
+.gd-actions{display:flex;gap:8px;margin-top:12px}
+.gd-read-btn{flex:1;padding:10px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer;transition:background .15s;text-align:center}
+.gd-read-btn:hover{background:var(--accent-hover)}
+.gd-fav-btn{padding:10px 16px;background:var(--card);border:1px solid var(--border);color:var(--text-dim);border-radius:var(--radius);font-size:14px;cursor:pointer;transition:color .15s,border-color .15s,background .15s;white-space:nowrap}
+.gd-fav-btn:hover{border-color:var(--accent);color:var(--accent)}
+.gd-fav-btn.fav{color:#f1c40f;border-color:#f1c40f;background:rgba(241,196,15,.08)}
+.gd-info{flex:1;min-width:0}
+.gd-title{font-size:18px;font-weight:700;color:#fff;margin-bottom:8px;line-height:1.3}
+.gd-meta{font-size:13px;color:var(--text-dim);margin-bottom:16px;line-height:1.6}
+.gd-tags{margin-bottom:16px}
+.gd-tags .gd-tag-group{margin-bottom:12px}
+.gd-tags .gd-tag-group-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-dim);margin-bottom:4px}
+.gd-tags .gd-tag-group-inner{display:flex;flex-wrap:wrap;gap:3px}
+.gd-tag{font-size:11px;padding:3px 8px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;color:var(--text-dim);transition:color .15s,border-color .15s,background .15s}
+.gd-tag:hover{border-color:var(--accent);color:var(--accent)}
+.gd-tag.accept{border-color:var(--accept);color:var(--accept);background:rgba(39,174,96,.08)}
+.gd-tag.avoid{border-color:var(--avoid);color:var(--avoid);background:rgba(231,76,60,.08)}
+.gd-related{margin-top:16px}
+.gd-related h3{font-size:14px;font-weight:600;color:#fff;margin-bottom:8px}
+.gd-related .gallery-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+@media(max-width:700px){.gd-layout{flex-direction:column;align-items:center}.gd-cover-wrap{width:240px}}
+
+/* Reader */
+.reader-view{position:fixed;inset:0;z-index:100;background:var(--bg);display:none;flex-direction:column}
+.reader-view.active{display:flex}
+.reader-header{display:flex;align-items:center;gap:12px;padding:8px 16px;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;height:48px}
+.reader-back{font-size:14px;padding:6px 12px;border-radius:var(--radius);color:var(--text-dim);white-space:nowrap;transition:color .15s,background .15s}
+.reader-back:hover{color:var(--text);background:var(--card)}
+.reader-header .reader-title{font-size:13px;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.reader-header .reader-meta{font-size:11px;color:var(--text-dim);white-space:nowrap}
+.reader-body{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;min-height:0}
+.reader-nav-area{position:absolute;top:0;bottom:0;width:15%;cursor:pointer;z-index:2}
+.reader-nav-area.prev{left:0}
+.reader-nav-area.next{right:0}
+.reader-nav-area:hover{background:rgba(255,255,255,.03)}
+.reader-nav-area .reader-nav-icon{position:absolute;top:50%;transform:translateY(-50%);font-size:36px;color:var(--text-dim);opacity:0;transition:opacity .2s;pointer-events:none}
+.reader-nav-area.prev .reader-nav-icon{left:12px}
+.reader-nav-area.next .reader-nav-icon{right:12px}
+.reader-nav-area:hover .reader-nav-icon{opacity:.5}
+.reader-image-wrap{display:flex;align-items:center;justify-content:center;max-width:100%;max-height:100%;padding:8px}
+.reader-image-wrap img{max-width:100%;max-height:calc(100vh - 100px);object-fit:contain;border-radius:2px;box-shadow:0 0 20px rgba(0,0,0,.5)}
+.reader-footer{display:flex;align-items:center;justify-content:center;gap:12px;padding:8px 16px;background:var(--surface);border-top:1px solid var(--border);flex-shrink:0;height:44px}
+.reader-footer button{padding:4px 12px;border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;transition:background .15s}
+.reader-footer button:hover:not(:disabled){background:var(--card);border-color:var(--accent)}
+.reader-footer button:disabled{opacity:.3;cursor:default}
+.reader-page-input{width:48px;text-align:center;padding:3px 6px;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:13px;outline:none}
+.reader-page-input:focus{border-color:var(--accent)}
+.reader-page-info{font-size:13px;color:var(--text-dim)}
+.reader-loading{position:absolute;color:var(--text-dim);font-size:13px}
+.reader-tags{display:flex;flex-wrap:wrap;gap:4px;padding:8px 16px;background:var(--surface);border-top:1px solid var(--border);max-height:80px;overflow-y:auto;flex-shrink:0}
+.reader-tags .rt-chip{font-size:10px;padding:2px 6px;background:var(--card);color:var(--text-dim);border-radius:2px}
+.reader-tags .rt-chip:hover{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="app-header">
+  <button class="menu-btn" id="menu-btn" title="Menu">&#9776;</button>
+  <h1 id="app-title">NHentai</h1>
+  <div class="header-links"></div>
+</header>
+
+<!-- Sidebar overlay -->
+<div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+<!-- Sidebar -->
+<nav class="sidebar" id="sidebar">
+  <div class="nav-group">
+    <div class="nav-group-title">Browse</div>
+    <button class="nav-item active" data-view="home"><span class="nav-icon">&#127968;</span> Home</button>
+    <button class="nav-item" data-view="search"><span class="nav-icon">&#128269;</span> Search</button>
+    <button class="nav-item" data-view="tags"><span class="nav-icon">&#127991;</span> Tag Filter</button>
+    <button class="nav-item" data-view="random"><span class="nav-icon">&#128256;</span> Random</button>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-title">Library</div>
+    <button class="nav-item" data-view="favorites"><span class="nav-icon">&#9733;</span> Favorites</button>
+     <button class="nav-item" data-view="history"><span class="nav-icon">&#128337;</span> History</button>
+   </div>
+   <div class="nav-group">
+     <div class="nav-group-title">Settings</div>
+     <button class="nav-item" data-view="settings"><span class="nav-icon">&#9881;</span> Settings</button>
+   </div>
+</nav>
+
+<!-- Main -->
+<main class="app-main">
+
+<!-- Home -->
+<div class="view active" id="view-home">
+  <div class="content">
+    <div class="sort-bar" id="home-sort-bar">
+      <button data-sort="all">All</button>
+      <button data-sort="newest" class="active">Newest</button>
+      <button data-sort="popular-today">Popular Today</button>
+      <button data-sort="popular-week">Popular Week</button>
+      <button data-sort="popular">Popular All Time</button>
+    </div>
+    <div id="home-content"></div>
+  </div>
+</div>
+
+<!-- Search -->
+<div class="view" id="view-search">
+  <div class="content">
+    <div class="search-bar">
+      <input type="text" id="search-input" placeholder="Search... (e.g. 'tag:"lolicon" artist:"name"')" autocomplete="off">
+      <button id="search-btn">Search</button>
+    </div>
+    <div class="search-tags" id="search-tags"></div>
+    <div class="sort-bar" id="search-sort-bar">
+      <button data-sort="newest" class="active">Newest</button>
+      <button data-sort="popular-today">Popular Today</button>
+      <button data-sort="popular-week">Popular Week</button>
+      <button data-sort="popular">Popular All Time</button>
+    </div>
+    <div id="search-results"></div>
+  </div>
+</div>
+
+<!-- Tag Filter -->
+<div class="view" id="view-tags">
+  <div class="content">
+    <div class="tf-search">
+      <input type="text" id="tf-search-input" placeholder="Search tags by name..." autocomplete="off">
+      <div class="tf-search-results" id="tf-search-results"></div>
+    </div>
+    <div class="tf-stats" id="tf-stats"></div>
+    <div class="tag-filter-tabs" id="tf-tabs">
+      <button class="active" data-tf-tab="applied">Applied</button>
+      <button data-tf-tab="tag">Tags</button>
+      <button data-tf-tab="artist">Artists</button>
+      <button data-tf-tab="character">Characters</button>
+      <button data-tf-tab="parody">Parodies</button>
+      <button data-tf-tab="group">Groups</button>
+      <button data-tf-tab="category">Categories</button>
+      <button data-tf-tab="language">Languages</button>
+    </div>
+    <div id="tf-content"></div>
+  </div>
+</div>
+
+<!-- Random -->
+<div class="view" id="view-random">
+  <div class="content">
+    <div class="section-header"><h2>Random Gallery</h2></div>
+    <div id="random-content"></div>
+  </div>
+</div>
+
+<!-- Favorites -->
+<div class="view" id="view-favorites">
+  <div class="content">
+    <div class="section-header"><h2>Favorites</h2></div>
+    <div id="favorites-content"><div class="tf-empty">Favorites will be stored locally. Click the star on any gallery to add it.</div></div>
+  </div>
+</div>
+
+<!-- History -->
+<div class="view" id="view-history">
+  <div class="content">
+    <div class="section-header"><h2>History</h2></div>
+    <div id="history-content"><div class="tf-empty">No browsing history yet.</div></div>
+  </div>
+</div>
+
+<!-- Gallery Detail -->
+<div class="view" id="view-detail">
+  <div class="content" id="detail-content">
+    <div class="gd-top">
+      <button class="gd-back" id="detail-back">&larr; Back</button>
+    </div>
+    <div class="gd-layout">
+      <div class="gd-cover-wrap">
+        <div class="gd-cover" id="detail-cover">
+          <div class="gd-loading">Loading...</div>
+        </div>
+        <div class="gd-actions">
+          <button class="gd-read-btn" id="detail-read-btn">&#9654; Read</button>
+          <button class="gd-fav-btn" id="detail-fav-btn">&#9734; Favorite</button>
+        </div>
+      </div>
+      <div class="gd-info">
+        <h1 class="gd-title" id="detail-title"></h1>
+        <div class="gd-meta" id="detail-meta"></div>
+        <div class="gd-tags" id="detail-tags"></div>
+        <div class="gd-related" id="detail-related"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="view" id="view-settings">
+  <div class="content">
+    <div class="section-header"><h2>Settings</h2></div>
+    <div class="settings-group">
+      <h3>Display</h3>
+      <div class="setting-row">
+        <div><label>Language Filter</label><div class="setting-desc">Only show galleries in this language</div></div>
+        <select id="set-language">
+          <option value="">All Languages</option>
+        </select>
+      </div>
+      <div class="setting-row">
+        <div><label>Grid Columns</label><div class="setting-desc">Number of columns in the gallery grid</div></div>
+        <select id="set-columns">
+          <option value="auto">Auto</option>
+          <option value="2">2 Columns</option>
+          <option value="3">3 Columns</option>
+          <option value="4">4 Columns</option>
+          <option value="5">5 Columns</option>
+          <option value="6">6 Columns</option>
+        </select>
+      </div>
+    </div>
+    <div class="settings-group">
+      <h3>Tag Filtering</h3>
+      <div class="setting-row">
+        <div><label>Remove Avoided Galleries</label><div class="setting-desc">Exclude galleries with avoided tags from search results</div></div>
+        <label class="toggle-wrap">
+          <input type="checkbox" id="set-remove-avoided" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+    <div class="settings-group">
+      <h3>API</h3>
+      <div class="setting-row">
+        <div><label>Account Status</label><div class="setting-desc">Shows whether the saved API key is active</div></div>
+        <span id="api-key-status" class="login-status logged-out">Not logged in</span>
+      </div>
+      <div class="setting-row">
+        <div><label>nhentai API Key</label><div class="setting-desc">Set your nhentai.net API key (<a href="https://nhentai.net/settings/" target="_blank" style="color:var(--accent)">get it here</a>) for authenticated API access</div></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <input type="password" id="set-api-key" style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-alt);color:var(--text);font-size:13px;width:220px" placeholder="nhk_...">
+          <button id="save-api-key-btn" style="padding:6px 12px;background:var(--accent);color:#fff;border-radius:var(--radius);font-size:12px">Save</button>
+        </div>
+      </div>
+    </div>
+    <div class="settings-group">
+      <h3>Data</h3>
+      <div class="setting-row">
+        <div><label>Clear All Tags</label><div class="setting-desc">Remove all tag states and database</div></div>
+        <button id="clear-tags-btn" style="padding:6px 12px;background:var(--avoid);color:#fff;border-radius:var(--radius);font-size:12px">Clear Tags</button>
+      </div>
+      <div class="setting-row">
+        <div><label>Clear History</label><div class="setting-desc">Remove browsing history</div></div>
+        <button id="clear-history-btn" style="padding:6px 12px;background:var(--avoid);color:#fff;border-radius:var(--radius);font-size:12px">Clear History</button>
+      </div>
+      <div class="setting-row">
+        <div><label>Clear Favorites</label><div class="setting-desc">Remove all favorites</div></div>
+        <button id="clear-favs-btn" style="padding:6px 12px;background:var(--avoid);color:#fff;border-radius:var(--radius);font-size:12px">Clear Favorites</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reader -->
+<div class="reader-view" id="view-reader">
+  <div class="reader-header">
+    <button class="reader-back" id="reader-close">&larr; Back</button>
+    <span class="reader-title" id="reader-title"></span>
+    <span class="reader-meta" id="reader-meta"></span>
+  </div>
+  <div class="reader-body" id="reader-body">
+    <div class="reader-nav-area prev" id="reader-prev-area">
+      <span class="reader-nav-icon">&lsaquo;</span>
+    </div>
+    <div class="reader-image-wrap">
+      <img id="reader-img" src="" alt="Page">
+      <div class="reader-loading" id="reader-loading">Loading page...</div>
+    </div>
+    <div class="reader-nav-area next" id="reader-next-area">
+      <span class="reader-nav-icon">&rsaquo;</span>
+    </div>
+  </div>
+  <div class="reader-tags" id="reader-tags"></div>
+  <div class="reader-footer">
+    <button id="reader-first" disabled>&laquo;</button>
+    <button id="reader-prev" disabled>&lsaquo;</button>
+    <span class="reader-page-info">
+      Page <input type="number" class="reader-page-input" id="reader-page-input" min="1" value="1">
+      of <span id="reader-total">?</span>
+    </span>
+    <button id="reader-next" disabled>&rsaquo;</button>
+    <button id="reader-last" disabled>&raquo;</button>
+  </div>
+</div>
+
+</main>
+
+<script>
+(function () {
+'use strict';
+
+/* ================================================================== */
+/*  Constants                                                         */
+/* ================================================================== */
+// Always use direct nhentai.net API URLs.
+// In Tauri: no CORS restrictions, works directly.
+// In browser: requires nhentai.net visit for Cloudflare cookies
+// and may need a CORS extension for full API testing.
+var NHENTAI_BASE = 'https://nhentai.net';
+var TAG_STATE_KEY = 'nhentai_tag_state_v4';
+var TAG_DB_KEY = 'nhentai_tag_db_v1';
+var SETTINGS_KEY = 'nhentai_settings_v1';
+var FAVORITES_KEY = 'nhentai_favorites_v2';
+var HISTORY_KEY = 'nhentai_history_v2';
+
+var TS = { DEFAULT: 0, AVOIDED: 1, ACCEPTED: 2 };
+var TS_LABEL = { 0: '', 1: 'avoid', 2: 'accept' };
+var TS_ICON = { 0: '\u25CB', 1: '\u2716', 2: '\u2714' };
+var TS_NEXT = { 0: 2, 2: 1, 1: 0 };
+var TYPE_SINGLE = { tag: 'tag', artist: 'artist', character: 'character', parody: 'parody', group: 'group', category: 'category', language: 'language' };
+var LANG_MAP = { 17290: 'en', 29963: 'ja', 29964: 'zh', 15483: 'ko', 15484: 'fr', 15485: 'de', 15486: 'es', 15487: 'pt', 15488: 'ru', 15489: 'it', 15490: 'nl', 15491: 'pl', 15492: 'sv', 15493: 'da', 15494: 'fi', 15495: 'no', 15496: 'cs', 15497: 'hu', 15498: 'ro', 15499: 'th', 15500: 'vi', 15501: 'ar', 15502: 'tr' };
+var LANG_FLAG = { en: '\uD83C\uDDEC\uD83C\uDDE7', ja: '\uD83C\uDDEF\uD83C\uDDF5', zh: '\uD83C\uDDE8\uD83C\uDDF3', ko: '\uD83C\uDDF0\uD83C\uDDF7', fr: '\uD83C\uDDEB\uD83C\uDDF7', de: '\uD83C\uDDE9\uD83C\uDDEA', es: '\uD83C\uDDEA\uD83C\uDDF8', pt: '\uD83C\uDDF5\uD83C\uDDF9', ru: '\uD83C\uDDF7\uD83C\uDDFA', it: '\uD83C\uDDEE\uD83C\uDDF9', nl: '\uD83C\uDDF3\uD83C\uDDF1', pl: '\uD83C\uDDF5\uD83C\uDDF1', sv: '\uD83C\uDDF8\uD83C\uDDEA', da: '\uD83C\uDDE9\uD83C\uDDF0', fi: '\uD83C\uDDEB\uD83C\uDDEE', no: '\uD83C\uDDF3\uD83C\uDDF4', cs: '\uD83C\uDDE8\uD83C\uDDFF', hu: '\uD83C\uDDED\uD83C\uDDFA', ro: '\uD83C\uDDF7\uD83C\uDDF4', th: '\uD83C\uDDF9\uD83C\uDDED', vi: '\uD83C\uDDFB\uD83C\uDDF3', ar: '\uD83C\uDDE6\uD83C\uDDEA', tr: '\uD83C\uDDF9\uD83C\uDDF7', id: '\uD83C\uDDEE\uD83C\uDDE9', tl: '\uD83C\uDDF5\uD83C\uDDED', ms: '\uD83C\uDDF2\uD83C\uDDFE', my: '\uD83C\uDDF2\uD83C\uDDF2', el: '\uD83C\uDDEC\uD83C\uDDF7', he: '\uD83C\uDDEE\uD83C\uDDF1', hi: '\uD83C\uDDEE\uD83C\uDDF3', bn: '\uD83C\uDDE7\uD83C\uDDE9', fa: '\uD83C\uDDEE\uD83C\uDDF7', uk: '\uD83C\uDDFA\uD83C\uDDE6', bg: '\uD83C\uDDE7\uD83C\uDDEC', sr: '\uD83C\uDDF7\uD83C\uDDF8', hr: '\uD83C\uDDED\uD83C\uDDF7', sk: '\uD83C\uDDF8\uD83C\uDDF0', et: '\uD83C\uDDEA\uD83C\uDDEA', lv: '\uD83C\uDDF1\uD83C\uDDFB', lt: '\uD83C\uDDF1\uD83C\uDDF9', sq: '\uD83C\uDDE6\uD83C\uDDF1', is: '\uD83C\uDDEE\uD83C\uDDF8', ga: '\uD83C\uDDEE\uD83C\uDDEA', mt: '\uD83C\uDDF2\uD83C\uDDF9', cy: '\uD83C\uDFF4\uDB40\uDC67\uDB40\uDC62\uDB40\uDC77\uDB40\uDC6C\uDB40\uDC73\uDB40\uDC7F', ca: '\uD83C\uDDE6\uD83C\uDDF9', eu: '\uD83C\uDDE6\uD83C\uDDF9', gl: '\uD83C\uDDEC\uD83C\uDDE9', af: '\uD83C\uDDE6\uD83C\uDDFA', am: '\uD83C\uDDE6\uD83C\uDDEB', jv: '\uD83C\uDDEE\uD83C\uDDE9', zu: '\uD83C\uDDFF\uD83C\uDDE6', ur: '\uD83C\uDDF5\uD83C\uDDF0', kk: '\uD83C\uDDF0\uD83C\uDDFF', az: '\uD83C\uDDE6\uD83C\uDDFF', be: '\uD83C\uDDE7\uD83C\uDDFE', bs: '\uD83C\uDDE7\uD83C\uDDE6', mk: '\uD83C\uDDF2\uD83C\uDDF0', sl: '\uD83C\uDDF8\uD83C\uDDEE', sw: '\uD83C\uDDF8\uD83C\uDDEA', uz: '\uD83C\uDDFA\uD83C\uDDFF', si: '\uD83C\uDDF1\uD83C\uDDF0', ne: '\uD83C\uDDF3\uD83C\uDDF5', km: '\uD83C\uDDF0\uD83C\uDDED', lo: '\uD83C\uDDF1\uD83C\uDDE6', hy: '\uD83C\uDDE6\uD83C\uDDF2', ka: '\uD83C\uDDEC\uD83C\uDDEA', pa: '\uD83C\uDDF5\uD83C\uDDF3', ta: '\uD83C\uDDF1\uD83C\uDDFA', te: '\uD83C\uDDEE\uD83C\uDDF3', kn: '\uD83C\uDDEE\uD83C\uDDF3', ml: '\uD83C\uDDF2\uD83C\uDDF4', gu: '\uD83C\uDDEC\uD83C\uDDE7', mr: '\uD83C\uDDEE\uD83C\uDDF3', mn: '\uD83C\uDDF2\uD83C\uDDF3', bo: '\uD83C\uDDF9\uD83C\uDDF2', eo: '\uD83C\uDF10', la: '\uD83C\uDF0D' };
+var thumbServers = ['t4.nhentai.net'];
+var imageServers = ['i4.nhentai.net'];
+var langIdMap = {};
+
+/* ================================================================== */
+/*  Storage layer — SQLite via Tauri IPC, synced to localStorage for  */
+/*  the nhentai.net init scripts (tag_blacklist.js)                   */
+/* ================================================================== */
+
+var tagState = {};  // id -> { status: TS, name, type, count? }
+var tagDB = {};     // id -> { name, type, count }
+var settings = { sort: 'date', language: '', columns: 'auto', removeAvoided: true };
+var favorites = []; // gallery ids
+var history = [];   // { id, title, time }
+
+// localStorage keys for init script sync
+var LS_TAG_STATE = 'nhentai_tag_state_v4';
+var LS_SETTINGS = 'nhentai_settings_v1';
+
+/// Invoke a Tauri command (noop outside Tauri — data stays in-memory)
+function invoke(cmd, args) {
+  try {
+    if (window.__TAURI_INTERNALS__ && typeof window.__TAURI_INTERNALS__.invoke === 'function') {
+      return window.__TAURI_INTERNALS__.invoke(cmd, args || {});
+    }
+    if (window.__TAURI__ && typeof window.__TAURI__.invoke === 'function') {
+      return window.__TAURI__.invoke(cmd, args || {});
+    }
+    if (window.__TAURI__ && window.__TAURI__.tauri && typeof window.__TAURI__.tauri.invoke === 'function') {
+      return window.__TAURI__.tauri.invoke(cmd, args || {});
+    }
+    if (typeof window.__TAURI_INVOKE__ === 'function') {
+      return window.__TAURI_INVOKE__(cmd, args || {});
+    }
+  } catch (err) {
+    console.warn('Tauri invoke failed:', cmd, err);
+  }
+  console.warn('Tauri invoke unavailable:', cmd);
+  return Promise.reject(new Error('not in Tauri'));
+}
+
+// Sync tag state to localStorage for the init scripts on nhentai.net pages
+function syncTagStateToLS() {
+  try { localStorage.setItem(LS_TAG_STATE, JSON.stringify(tagState)); } catch (_) {}
+}
+
+/// Load all data from SQLite on init
+function loadAll() {
+  return invoke('db_get_snapshot').then(function (snap) {
+    // Tags
+    tagState = {};
+    tagDB = {};
+    (snap.tags || []).forEach(function (t) {
+      var id = String(t.id);
+      tagState[id] = { status: t.status, name: t.name, type: t.type, count: t.count };
+      tagDB[id] = { name: t.name, type: t.type, count: t.count };
+    });
+    rebuildLangMap();
+    syncTagStateToLS();
+
+    // History
+    history = (snap.history || []).map(function (h) {
+      return { id: h.gallery_id, title: h.title, time: h.time };
+    });
+
+    // Favorites
+    favorites = snap.favorites || [];
+
+    // Settings
+    if (snap.settings) {
+      if (snap.settings.language !== undefined) settings.language = snap.settings.language;
+      if (snap.settings.columns) settings.columns = snap.settings.columns;
+      if (snap.settings.removeAvoided !== undefined) settings.removeAvoided = snap.settings.removeAvoided === 'true';
+    }
+  }).catch(function () {
+    // Not in Tauri or DB unavailable — try localStorage fallback
+    try {
+      tagState = JSON.parse(localStorage.getItem(LS_TAG_STATE)) || {};
+      var lsSettings = JSON.parse(localStorage.getItem(LS_SETTINGS)) || {};
+      settings = Object.assign(settings, lsSettings);
+    } catch (_) {}
+  });
+}
+
+function saveTagState() {
+  syncTagStateToLS();
+}
+
+function saveSettings() {
+  syncTagStateToLS();
+  var s = settings;
+  invoke('db_set_setting', { key: 'sort', value: s.sort || 'date' }).catch(function () {});
+  invoke('db_set_setting', { key: 'language', value: s.language || '' }).catch(function () {});
+  invoke('db_set_setting', { key: 'columns', value: s.columns || 'auto' }).catch(function () {});
+  invoke('db_set_setting', { key: 'removeAvoided', value: String(s.removeAvoided !== false) }).catch(function () {});
+}
+
+/* ================================================================== */
+/*  Tag management                                                     */
+/* ================================================================== */
+
+// Cycle: DEFAULT -> ACCEPTED -> AVOIDED -> DEFAULT
+function cycleTagStatus(id) {
+  var t = tagState[id];
+  var cur = t ? t.status : TS.DEFAULT;
+  var next = TS_NEXT[cur];
+  if (next === TS.DEFAULT) {
+    delete tagState[id];
+  } else {
+    var dbEntry = tagDB[id];
+    var name = dbEntry ? dbEntry.name : 'unknown';
+    var type = dbEntry ? dbEntry.type : 'tag';
+    var count = dbEntry ? dbEntry.count : 0;
+    tagState[id] = { status: next, name: name, type: type, count: count };
+  }
+  syncTagStateToLS();
+  scheduleDBSync();
+  return next;
+}
+
+function setTagStatus(id, name, type, status, count) {
+  var numId = parseInt(id, 10);
+  if (status === TS.DEFAULT) {
+    delete tagState[id];
+  } else {
+    tagState[id] = { status: status, name: name, type: type, count: count || 0 };
+  }
+  tagDB[id] = { name: name, type: type, count: count || 0 };
+  syncTagStateToLS();
+  scheduleDBSync();
+}
+
+function ensureTagInDB(id, name, type, count) {
+  if (!tagDB[id]) {
+    tagDB[id] = { name: name, type: type, count: count || 0 };
+    if (type === 'language' && name) {
+      var code = nameToLang(name);
+      if (code) langIdMap[id] = code;
+    }
+  } else if (count && count > tagDB[id].count) {
+    tagDB[id].count = count;
+    tagDB[id].name = name;
+  }
+}
+
+/* Periodic bulk sync to SQLite — debounced, runs at most once per 2s */
+var _dbSyncTimer = null;
+function scheduleDBSync() {
+  if (_dbSyncTimer) return;
+  _dbSyncTimer = setTimeout(doDBSync, 2000);
+}
+function doDBSync() {
+  _dbSyncTimer = null;
+  var allTags = {};
+  // Merge tagState (non-DEFAULT) + tagDB (all known tags)
+  Object.keys(tagDB).forEach(function (id) {
+    var t = tagDB[id];
+    var state = tagState[id];
+    allTags[id] = {
+      id: parseInt(id, 10),
+      name: t.name,
+      tagType: t.type || 'tag',
+      count: t.count || 0,
+      status: state ? state.status : 0,
+    };
+  });
+  var arr = [];
+  Object.keys(allTags).forEach(function (id) { arr.push(allTags[id]); });
+  invoke('db_upsert_tags_bulk', { tags: arr }).catch(function () {});
+}
+
+/* ================================================================== */
+/*  Query builder                                                      */
+/* ================================================================== */
+
+function buildTagQuery(baseQuery) {
+  var parts = [];
+  if (baseQuery && baseQuery.trim()) parts.push(baseQuery.trim());
+
+  var stateIds = Object.keys(tagState);
+  stateIds.forEach(function (id) {
+    var t = tagState[id];
+    if (!t || !t.status) return;
+    var prefix = TYPE_SINGLE[t.type] || 'tag';
+    var quoted = t.name.indexOf(' ') !== -1 ? '"' + t.name + '"' : t.name;
+    if (t.status === TS.ACCEPTED) {
+      parts.push(prefix + ':' + quoted);
+    } else if (t.status === TS.AVOIDED) {
+      parts.push('-' + prefix + ':' + quoted);
+    }
+  });
+
+  // Language filter
+  if (settings.language) {
+    parts.push('language:"' + settings.language + '"');
+  }
+
+  return parts.join(' ');
+}
+
+/* ================================================================== */
+/*  API client — calls Tauri commands (Rust reqwest → nhentai.net)    */
+/* ================================================================== */
+
+function apiAll(page, sort) {
+  var normalizedSort = (sort === 'all') ? 'newest' : (sort || 'newest');
+  return invoke('api_all', { page: page || 1, sort: normalizedSort });
+}
+
+function apiSearch(query, page, sort) {
+  var q = buildTagQuery(query);
+  if (q && q.trim()) {
+    var normalizedSort = (sort === 'all' || sort === 'newest') ? 'date' : (sort || 'date');
+    return invoke('api_search', { query: q, page: page || 1, sort: normalizedSort });
+  }
+  // No query or tags — use wildcard search for non-default sorts (galleries endpoint ignores sort)
+  if (sort && sort !== 'newest' && sort !== 'date' && sort !== 'all') {
+    return invoke('api_search', { query: '*', page: page || 1, sort: sort });
+  }
+  return invoke('api_all', { page: page || 1, sort: sort || 'newest' });
+}
+
+function apiSearchTags(query, type) {
+  var payload = { query: query || '' };
+  if (type && type.trim()) {
+    payload.tag_type = type.trim();
+  }
+  return invoke('api_search_tags', payload);
+}
+
+function apiGetGallery(id) {
+  return invoke('api_gallery', { id: id });
+}
+
+function apiRandom() {
+  return invoke('api_random');
+}
+
+function apiGalleriesPopular() {
+  return invoke('api_galleries_popular');
+}
+
+function apiGalleriesTagged(tagId, page, sort) {
+  return invoke('api_galleries_tagged', { tag_id: tagId, page: page || 1, sort: sort || 'date' });
+}
+
+function apiCheckFavorite(id) {
+  return invoke('api_check_favorite', { id: id });
+}
+
+function apiAddFavorite(id) {
+  return invoke('api_add_favorite', { id: id });
+}
+
+function apiRemoveFavorite(id) {
+  return invoke('api_remove_favorite', { id: id });
+}
+
+function apiGetDownloadUrl(id) {
+  return invoke('api_get_download_url', { id: id });
+}
+
+function apiTagsByIds(ids) {
+  return invoke('api_tags_by_ids', { ids: ids });
+}
+
+function apiTagsByType(tagType, page) {
+  return invoke('api_tags_by_type', { tagType: tagType, page: page || 1 });
+}
+
+function apiGalleryComments(id) {
+  return invoke('api_gallery_comments', { id: id });
+}
+
+function apiGalleryCommentCount(id) {
+  return invoke('api_gallery_comment_count', { id: id });
+}
+
+function apiGalleryRelated(id) {
+  return invoke('api_gallery_related', { id: id });
+}
+
+function apiFavoritesRandom() {
+  return invoke('api_favorites_random');
+}
+
+function apiBlacklistIds() {
+  return invoke('api_blacklist_ids');
+}
+
+// Build a full CDN URL from a server hostname and a relative path.
+// server may be a bare hostname ("t4.nhentai.net") or a full URL.
+// path may be relative ("galleries/123/thumb.webp") or absolute ("/galleries/123/thumb.webp").
+function cdnUrl(server, path) {
+  if (!path) return '';
+  if (path.indexOf('://') !== -1 || path.indexOf('//') === 0) return path;
+  var s = server || 'i4.nhentai.net';
+  if (s.indexOf('://') === -1) s = 'https://' + s;
+  s = s.replace(/\/+$/, '');
+  path = path.replace(/^\/+/, '');
+  return s + '/' + path;
+}
+
+var imgServerIndex = 0;
+
+function pickServer(servers, fallback) {
+  if (!servers || servers.length === 0) return fallback;
+  return servers[imgServerIndex++ % servers.length] || fallback;
+}
+
+function imageExtension(type) {
+  if (!type) return 'jpg';
+  if (type === 'j') return 'jpg';
+  if (type === 'p') return 'png';
+  if (type === 'g') return 'gif';
+  return String(type);
+}
+
+function thumbUrl(g) {
+  if (!g) return '';
+  if (g.coverUrl) return g.coverUrl;
+  var server = pickServer(thumbServers, 't4.nhentai.net');
+
+  // If there is a thumbnail string, treat it as a relative CDN path
+  if (typeof g.thumbnail === 'string') {
+    g.coverUrl = cdnUrl(server, g.thumbnail);
+    return g.coverUrl;
+  }
+  // CoverInfo object from detail response
+  if (g.thumbnail && typeof g.thumbnail === 'object' && g.thumbnail.path) {
+    g.coverUrl = cdnUrl(server, g.thumbnail.path);
+    return g.coverUrl;
+  }
+  if (g.cover && typeof g.cover === 'object' && g.cover.path) {
+    g.coverUrl = cdnUrl(server, g.cover.path);
+    return g.coverUrl;
+  }
+  if (g.images && typeof g.images === 'object') {
+    if (g.images.cover && typeof g.images.cover === 'object' && g.images.cover.t && g.media_id) {
+      g.coverUrl = cdnUrl(server, 'galleries/' + g.media_id + '/cover.' + imageExtension(g.images.cover.t));
+      return g.coverUrl;
+    }
+    if (g.images.thumbnail && typeof g.images.thumbnail === 'object' && g.images.thumbnail.t && g.media_id) {
+      g.coverUrl = cdnUrl(server, 'galleries/' + g.media_id + '/thumb.' + imageExtension(g.images.thumbnail.t));
+      return g.coverUrl;
+    }
+  }
+  // Last resort: construct from media_id — matches the website's own pattern
+  var id = g.media_id || g.id;
+  g.coverUrl = cdnUrl(server, 'galleries/' + id + '/thumb.webp');
+  return g.coverUrl;
+}
+
+// Pre-compute cover URLs for all galleries in a result set.
+function ensureGalleryUrls(data) {
+  var galleries = data.result || [];
+  galleries.forEach(function (g) { thumbUrl(g); });
+}
+
+function formatDate(ts) {
+  var d = new Date(ts * 1000);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function getLanguage(gallery) {
+  if (!gallery) return '';
+  // Try full tag objects (detail responses)
+  if (gallery.tags && Array.isArray(gallery.tags)) {
+    for (var i = 0; i < gallery.tags.length; i++) {
+      var t = gallery.tags[i];
+      if (t.type === 'language') {
+        return idToLang(t.id) || t.name || '';
+      }
+    }
+  }
+  // Try tag_ids array (v2 list items) — look up in tagDB
+  if (gallery.tag_ids && Array.isArray(gallery.tag_ids)) {
+    for (var j = 0; j < gallery.tag_ids.length; j++) {
+      var tid = gallery.tag_ids[j];
+      var code = idToLang(tid);
+      if (code) return code;
+      var t = tagDB[tid];
+      if (t && t.type === 'language') {
+        return idToLang(t.id) || t.name || '';
+      }
+    }
+  }
+  return '';
+}
+
+function idToLang(tagId) {
+  return LANG_MAP[tagId] || langIdMap[tagId] || '';
+}
+
+function nameToLang(name) {
+  if (!name) return '';
+  var map = { 'english':'en','japanese':'ja','chinese':'zh','korean':'ko','french':'fr','german':'de','spanish':'es','portuguese':'pt','russian':'ru','italian':'it','dutch':'nl','polish':'pl','swedish':'sv','danish':'da','finnish':'fi','norwegian':'no','czech':'cs','hungarian':'hu','romanian':'ro','thai':'th','vietnamese':'vi','arabic':'ar','turkish':'tr','indonesian':'id','tagalog':'tl','malay':'ms','burmese':'my','mongolian':'mn','tibetan':'bo','armenian':'hy','georgian':'ka','greek':'el','hebrew':'he','hindi':'hi','bengali':'bn','punjabi':'pa','tamil':'ta','telugu':'te','marathi':'mr','gujarati':'gu','kannada':'kn','malayalam':'ml','sinhala':'si','nepali':'ne','khmer':'km','lao':'lo','uzbek':'uz','kazakh':'kk','azerbaijani':'az','persian':'fa','ukrainian':'uk','belarusian':'be','bulgarian':'bg','serbian':'sr','croatian':'hr','bosnian':'bs','macedonian':'mk','slovenian':'sl','slovak':'sk','estonian':'et','latvian':'lv','lithuanian':'lt','albanian':'sq','swahili':'sw','irish':'ga','icelandic':'is','maltese':'mt','welsh':'cy','galician':'gl','basque':'eu','catalan':'ca','afrikaans':'af','amharic':'am','javanese':'jv','sundanese':'su','xhosa':'xh','zulu':'zu','esperanto':'eo','latin':'la','somali':'so','tajik':'tg','turkmen':'tk','uighur':'ug','urdu':'ur','yiddish':'yi','yoruba':'yo','cebuano':'ceb','scottish':'gd' };
+  return map[name.toLowerCase()] || '';
+}
+
+// Rebuild langIdMap from tagDB (all tags with type=language)
+function rebuildLangMap() {
+  langIdMap = {};
+  Object.keys(tagDB).forEach(function (id) {
+    var t = tagDB[id];
+    if (t.type === 'language') {
+      var code = nameToLang(t.name);
+      if (code) langIdMap[id] = code;
+    }
+  });
+}
+
+function getLanguageFlag(gallery) {
+  var lang = getLanguage(gallery);
+  return lang ? (LANG_FLAG[lang] || '') : '';
+}
+
+/* ================================================================== */
+/*  Gallery grid renderer                                              */
+/* ================================================================== */
+
+function renderGrid(container, data, query, sort, page) {
+  var galleries = data.result || [];
+  if (galleries.length === 0) {
+    container.innerHTML = '<div class="tf-empty">No galleries found</div>';
+    return;
+  }
+
+  // Debug: log first gallery's keys to console
+  try { if (galleries[0]) { console.log('[nhentai] first gallery keys:', Object.keys(galleries[0])); console.log('[nhentai] first gallery sample:', JSON.stringify(galleries[0]).slice(0, 500)); } } catch (_) {}
+
+  // Extract tags from results into DB (only if full tag objects present)
+  galleries.forEach(function (g) {
+    if (g.tags && Array.isArray(g.tags)) {
+      g.tags.forEach(function (t) {
+        ensureTagInDB(t.id, t.name, t.type || 'tag', t.count);
+      });
+    }
+  });
+
+  var html = '<div class="gallery-grid" style="grid-template-columns:' + (settings.columns !== 'auto' ? 'repeat(' + settings.columns + ',1fr)' : '') + '">';
+  galleries.forEach(function (g) {
+    var title = (g.title && g.title.pretty) || (g.title && g.title.english) || (g.title && g.title.japanese) || g.english_title || g.japanese_title || 'Untitled';
+    var img = thumbUrl(g);
+    var isFav = favorites.indexOf(g.id) !== -1;
+    var pages = g.num_pages || g.pages_count || '';
+    var favCount = g.num_favorites || g.favorites || '';
+    var lang = getLanguage(g);
+    html += '<div class="gallery-card' + (isFav ? ' has-fav' : '') + '" data-gid="' + g.id + '">';
+    html += '  <div class="card-img-wrap"><img src="' + img + '" alt="" loading="lazy"></div>';
+    html += '  <div class="card-caption">' + escHtml(title) + '</div>';
+    html += '  <div class="card-info">';
+    if (pages) html += '<span class="pages">' + pages + 'p</span>';
+    if (lang) html += '<span class="lang">' + escHtml(lang) + '</span>';
+    if (favCount) html += '<span class="fav">\u2605 ' + favCount + '</span>';
+    html += '  </div>';
+    html += '  <div class="fav-badge">' + (isFav ? '\u2605' : '') + '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // Pagination — handle both v1 (total/per_page) and v2 (num_pages)
+  var curPage = data.page || page || 1;
+  var total = data.total || 0;
+  var totalPages = data.num_pages || 1;
+  if (data.total && data.per_page) {
+    totalPages = Math.ceil(data.total / data.per_page) || 1;
+  }
+
+  if (totalPages > 1) {
+    html += '<div class="pagination-bar">';
+    html += '<button class="pg-first" ' + (curPage <= 1 ? 'disabled' : '') + '>&#171;</button>';
+    html += '<button class="pg-prev" ' + (curPage <= 1 ? 'disabled' : '') + '>&#8249; Prev</button>';
+    html += '<div class="page-nums">';
+    var start = Math.max(1, curPage - 2);
+    var end = Math.min(totalPages, curPage + 2);
+    if (start > 1) { html += '<button class="pg-num" data-p="1">1</button>'; if (start > 2) html += '<span style="color:var(--text-dim);padding:0 4px">...</span>'; }
+    for (var p = start; p <= end; p++) {
+      html += '<button class="pg-num' + (p === curPage ? ' active' : '') + '" data-p="' + p + '">' + p + '</button>';
+    }
+    if (end < totalPages) { if (end < totalPages - 1) html += '<span style="color:var(--text-dim);padding:0 4px">...</span>'; html += '<button class="pg-num" data-p="' + totalPages + '">' + totalPages + '</button>'; }
+    html += '</div>';
+    html += '<button class="pg-next" ' + (curPage >= totalPages ? 'disabled' : '') + '>Next &#8250;</button>';
+    html += '<button class="pg-last" ' + (curPage >= totalPages ? 'disabled' : '') + '>&#187;</button>';
+    html += '<span class="page-info">Page ' + curPage + ' of ' + totalPages + ' (' + total + ' total)</span>';
+    html += '</div>';
+  }
+
+  container.innerHTML = html;
+
+  // Events
+  container.querySelectorAll('.gallery-card').forEach(function (card) {
+    card.addEventListener('click', function (e) {
+      var gid = card.getAttribute('data-gid');
+      if (gid) openGallery(parseInt(gid, 10), card);
+    });
+  });
+
+  var loadMoreBtn = container.querySelector('#tf-load-more');
+  if (loadMoreBtn) {
+    loadMoreBtn.addEventListener('click', function () {
+      var cache = getTfTagCache(tab);
+      fetchTfTags(tab, cache.page + 1).then(function () {
+        renderTfTab(tab);
+      }).catch(function (err) {
+        var msg = err && err.message ? err.message : String(err);
+        container.innerHTML = '<div class="tf-empty">Failed to load more tags: ' + escHtml(msg) + '</div>';
+      });
+    });
+  }
+
+  container.querySelectorAll('.fav-toggle').forEach(function (el) {
+    el.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var gid = parseInt(el.getAttribute('data-gid'), 10);
+      toggleFavorite(gid);
+      var card = el.closest('.gallery-card');
+      if (card) {
+        // Re-render current view to update fav state
+        var view = document.querySelector('.view.active');
+        if (view) {
+          var viewId = view.id.replace('view-', '');
+          refreshCurrentView(viewId);
+        }
+      }
+    });
+  });
+
+  container.querySelectorAll('.tag-chip').forEach(function (chip) {
+    chip.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var tid = chip.getAttribute('data-tid');
+      if (!tid) return;
+      var dbEntry = tagDB[tid];
+      if (!dbEntry) return;
+      var newStatus = cycleTagStatus(tid);
+      var badgeEl = container.querySelector('.tf-stats');
+      if (badgeEl) updateTfStats();
+      // Re-render the current view to reflect tag state changes
+      var view = document.querySelector('.view.active');
+      if (view) {
+        var viewId = view.id.replace('view-', '');
+        refreshCurrentView(viewId);
+      }
+    });
+  });
+
+  // Pagination
+  bindPagination(container, query, sort, curPage, totalPages);
+}
+
+function bindPagination(container, query, sort, curPage, totalPages) {
+  function go(p) {
+    if (p < 1 || p > totalPages) return;
+    doSearch(query, p, sort, container);
+  }
+  var first = container.querySelector('.pg-first');
+  var prev = container.querySelector('.pg-prev');
+  var next = container.querySelector('.pg-next');
+  var last = container.querySelector('.pg-last');
+  if (first) first.addEventListener('click', function () { go(1); });
+  if (prev) prev.addEventListener('click', function () { go(curPage - 1); });
+  if (next) next.addEventListener('click', function () { go(curPage + 1); });
+  if (last) last.addEventListener('click', function () { go(totalPages); });
+  container.querySelectorAll('.pg-num').forEach(function (btn) {
+    btn.addEventListener('click', function () { go(parseInt(btn.getAttribute('data-p'), 10)); });
+  });
+}
+
+function doSearch(query, page, sort, container) {
+  if (!container) container = document.getElementById('search-results');
+  container.innerHTML = '<div class="loading"></div>';
+  var cacheKey = 'search:' + query + ':' + page + ':' + sort;
+  // Fetch fresh from API, cache computed URLs, render
+  apiSearch(query, page, sort).then(function (data) {
+    ensureGalleryUrls(data);
+    invoke('db_save_search_cache', { cacheKey: cacheKey, data: JSON.stringify(data) }).catch(function () {});
+    renderGrid(container, data, query, sort, page);
+  }).catch(function (err) {
+    // Fallback to cache
+    invoke('db_get_search_cache', { cacheKey: cacheKey }).then(function (cached) {
+      if (cached) {
+        try { renderGrid(container, JSON.parse(cached), query, sort, page); return; } catch (_) {}
+      }
+      container.innerHTML = apiErrorHtml(err, query, sort, page);
+    }).catch(function () {
+      container.innerHTML = apiErrorHtml(err, query, sort, page);
+    });
+  });
+}
+
+/* ================================================================== */
+/*  Home view                                                          */
+/* ================================================================== */
+
+var homeSort = 'newest';
+
+function loadHome() {
+  var container = document.getElementById('home-content');
+  var sort = homeSort || 'newest';
+  var query = buildTagQuery('');
+  var applyTagFilter = sort === 'all' && query;
+  var cacheKey = 'home:' + sort + ':' + (applyTagFilter ? query : '*');
+  // Show cached data immediately if available
+  invoke('db_get_search_cache', { cacheKey: cacheKey }).then(function (cached) {
+    if (cached) {
+      try {
+        var d = JSON.parse(cached);
+        ensureGalleryUrls(d);
+        renderGrid(container, d, applyTagFilter ? query : '', sort, 1);
+      } catch (_) {}
+    }
+  }).catch(function () {});
+  // Fetch fresh data in background
+  var loadPromise = applyTagFilter ? apiSearch(query, 1, sort) : apiAll(1, sort);
+  loadPromise.then(function (data) {
+    ensureGalleryUrls(data);
+    invoke('db_save_search_cache', { cacheKey: cacheKey, data: JSON.stringify(data) }).catch(function () {});
+    renderGrid(container, data, applyTagFilter ? query : '', sort, 1);
+  }).catch(function (err) {
+    container.innerHTML = apiErrorHtml(err);
+  });
+}
+
+function apiErrorHtml(err, query, page, sort) {
+  var msg = err.message || String(err);
+  var isAuth = msg.indexOf('403') !== -1 || msg.indexOf('401') !== -1;
+  var base = '<div class="tf-empty">';
+  if (isAuth) {
+    base += '<p style="margin-bottom:12px;font-size:14px">This app needs to connect to nhentai.net first.<br/>Complete the Cloudflare challenge on nhentai.net, then come back.</p>';
+    base += '<button onclick="window._connectToNhentai()" style="padding:10px 24px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-size:14px;font-weight:600;cursor:pointer">Connect to nhentai.net</button>';
+  } else {
+    base += 'Failed to load: ' + escHtml(msg);
+  }
+  base += '</div>';
+  return base;
+}
+
+function home() {
+  loadHome();
+}
+
+/* ================================================================== */
+/*  Search view                                                        */
+/* ================================================================== */
+
+var searchQuery = '';
+var searchSort = 'newest';
+var searchPage = 1;
+
+function loadSearch(query, page, sort) {
+  searchQuery = query || '';
+  searchPage = page || 1;
+  searchSort = sort || searchSort;
+  renderSearchTagChips();
+  var container = document.getElementById('search-results');
+  var cacheKey = 'search:' + searchQuery + ':' + searchPage + ':' + searchSort;
+  // Show cached data immediately if available
+  invoke('db_get_search_cache', { cacheKey: cacheKey }).then(function (cached) {
+    if (cached) {
+      try {
+        var d = JSON.parse(cached);
+        ensureGalleryUrls(d);
+        renderGrid(container, d, searchQuery, searchSort, searchPage);
+      } catch (_) {}
+    }
+  }).catch(function () {});
+  // Fetch fresh data in background
+  apiSearch(searchQuery, searchPage, searchSort).then(function (data) {
+    ensureGalleryUrls(data);
+    invoke('db_save_search_cache', { cacheKey: cacheKey, data: JSON.stringify(data) }).catch(function () {});
+    renderGrid(container, data, searchQuery, searchSort, searchPage);
+  }).catch(function (err) {
+    container.innerHTML = apiErrorHtml(err);
+  });
+}
+
+function renderSearchTagChips() {
+  var container = document.getElementById('search-tags');
+  var html = '';
+  var stateIds = Object.keys(tagState);
+  stateIds.forEach(function (id) {
+    var t = tagState[id];
+    if (!t) return;
+    html += '<span class="st-chip ' + TS_LABEL[t.status] + '" data-tid="' + id + '">';
+    html += '<span class="st-status">' + TS_ICON[t.status] + '</span> ';
+    html += escHtml(t.name);
+    html += '<span class="st-remove" data-tid="' + id + '">&times;</span>';
+    html += '</span>';
+  });
+  html += '<button class="st-add" id="st-add-btn">+ Add Tag</button>';
+  container.innerHTML = html;
+
+  // Click to cycle status
+  container.querySelectorAll('.st-chip').forEach(function (chip) {
+    chip.addEventListener('click', function (e) {
+      if (e.target.closest('.st-remove')) return;
+      var tid = chip.getAttribute('data-tid');
+      if (!tid) return;
+      cycleTagStatus(tid);
+      loadSearch(document.getElementById('search-input').value.trim(), searchPage);
+    });
+  });
+
+  // Remove
+  container.querySelectorAll('.st-remove').forEach(function (el) {
+    el.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var tid = el.getAttribute('data-tid');
+      if (!tid) return;
+      delete tagState[tid];
+      saveTagState();
+      loadSearch(document.getElementById('search-input').value.trim(), searchPage);
+    });
+  });
+
+  // Add tag button
+  var addBtn = document.getElementById('st-add-btn');
+  if (addBtn) {
+    addBtn.addEventListener('click', function () {
+      switchView('tags');
+    });
+  }
+}
+
+/* ================================================================== */
+/*  Tag filter view                                                    */
+/* ================================================================== */
+
+var tfCurrentTab = 'applied';
+var tfSearchTimeout = null;
+var tfTagCache = {};
+
+function loadTagFilter() {
+  updateTfStats();
+  renderTfTab(tfCurrentTab);
+}
+
+function getTfTagCache(type) {
+  if (!tfTagCache[type]) {
+    tfTagCache[type] = { page: 0, totalPages: 1, tags: [] };
+  }
+  return tfTagCache[type];
+}
+
+function fetchTfTags(type, page) {
+  var cache = getTfTagCache(type);
+  return apiTagsByType(type, page || 1).then(function (data) {
+    var tags = Array.isArray(data) ? data : (data.result || data.tags || []);
+    if (!Array.isArray(tags)) tags = [];
+    if ((page || 1) === 1) {
+      cache.tags = [];
+    }
+    tags.forEach(function (t) {
+      if (!t || !t.id || !t.name) return;
+      ensureTagInDB(t.id, t.name, t.type || type, t.count);
+      cache.tags.push({ id: t.id, name: t.name, type: t.type || type, count: t.count || 0 });
+    });
+    cache.page = page || 1;
+    cache.totalPages = data.num_pages || data.pages || 1;
+    return cache;
+  });
+}
+
+function updateTfStats() {
+  var el = document.getElementById('tf-stats');
+  if (!el) return;
+  var total = Object.keys(tagState).length;
+  var accepted = 0, avoided = 0;
+  Object.keys(tagState).forEach(function (id) {
+    var t = tagState[id];
+    if (t.status === TS.ACCEPTED) accepted++;
+    else if (t.status === TS.AVOIDED) avoided++;
+  });
+  el.textContent = total + ' filtered tags (' + accepted + ' accepted, ' + avoided + ' avoided)';
+}
+
+function renderTfTab(tab) {
+  tfCurrentTab = tab;
+  var container = document.getElementById('tf-content');
+  var tags = [];
+
+  if (tab === 'applied') {
+    // Show all non-DEFAULT tags
+    Object.keys(tagState).forEach(function (id) {
+      var t = tagState[id];
+      if (t && t.status) tags.push({ id: parseInt(id, 10), name: t.name, type: t.type || 'tag', count: t.count || 0, status: t.status });
+    });
+  } else {
+    var cache = getTfTagCache(tab);
+    if (cache.page === 0) {
+      container.innerHTML = '<div class="loading"></div>';
+      fetchTfTags(tab, 1).then(function () {
+        renderTfTab(tab);
+      }).catch(function (err) {
+        var msg = err && err.message ? err.message : String(err);
+        container.innerHTML = '<div class="tf-empty">Failed to load tags: ' + escHtml(msg) + '</div>';
+      });
+      return;
+    }
+    cache.tags.forEach(function (t) {
+      var state = tagState[t.id];
+      tags.push({ id: t.id, name: t.name, type: t.type, count: t.count || 0, status: state ? state.status : TS.DEFAULT });
+    });
+  }
+
+  // Sort: by count desc (for type tabs), or status then name (for applied)
+  if (tab === 'applied') {
+    tags.sort(function (a, b) { return b.status - a.status || a.name.localeCompare(b.name); });
+  } else {
+    tags.sort(function (a, b) { return (b.count || 0) - (a.count || 0) || a.name.localeCompare(b.name); });
+  }
+
+  if (tags.length === 0) {
+    container.innerHTML = '<div class="tf-empty">' +
+      (tab === 'applied'
+        ? 'No tags have been filtered yet. Browse galleries and click tags to filter them.'
+        : 'No ' + tab + ' tags found from the API yet. Try a different tab or refresh.') +
+      '</div>';
+    return;
+  }
+
+  var html = '<div class="tf-tags">';
+  tags.forEach(function (t) {
+    var cls = TS_LABEL[t.status];
+    html += '<div class="tf-tag ' + cls + '" data-tid="' + t.id + '">';
+    html += '  <span class="tf-status-icon">' + TS_ICON[t.status] + '</span>';
+    html += '  <span class="tf-name">' + escHtml(t.name) + '</span>';
+    html += '  <span class="tf-count">' + (t.count || '') + '</span>';
+    html += '  <span class="tf-badge ' + cls + '">' + (t.status === TS.DEFAULT ? 'Default' : t.status === TS.ACCEPTED ? 'Accept' : 'Avoid') + '</span>';
+    html += '</div>';
+  });
+  html += '</div>';
+  container.innerHTML = html;
+
+  if (tab !== 'applied') {
+    var cache = getTfTagCache(tab);
+    if (cache.page < cache.totalPages) {
+      container.innerHTML += '<div class="tf-pagination" style="margin-top:12px;text-align:center;">' +
+        '<button id="tf-load-more" style="padding:8px 14px;border:none;border-radius:6px;background:var(--surface);color:var(--text);cursor:pointer;">Load more</button>' +
+        '</div>';
+    }
+  }
+
+  var loadMoreBtn = container.querySelector('#tf-load-more');
+  if (loadMoreBtn) {
+    loadMoreBtn.addEventListener('click', function () {
+      var cache = getTfTagCache(tab);
+      fetchTfTags(tab, cache.page + 1).then(function () {
+        renderTfTab(tab);
+      }).catch(function (err) {
+        var msg = err && err.message ? err.message : String(err);
+        container.innerHTML = '<div class="tf-empty">Failed to load more tags: ' + escHtml(msg) + '</div>';
+      });
+    });
+  }
+
+  // Click to cycle status
+  container.querySelectorAll('.tf-tag').forEach(function (el) {
+    el.addEventListener('click', function () {
+      var tid = el.getAttribute('data-tid');
+      if (!tid) return;
+      cycleTagStatus(tid);
+      renderTfTab(tfCurrentTab);
+      updateTfStats();
+      // Update tabs count badges?
+    });
+  });
+}
+
+function doTfSearch(query) {
+  var resultsEl = document.getElementById('tf-search-results');
+  resultsEl.innerHTML = '<div style="padding:8px 12px;color:var(--text-dim);font-size:13px">Searching tags...</div>';
+  var type = tfCurrentTab && tfCurrentTab !== 'applied' ? tfCurrentTab : undefined;
+  apiSearchTags(query, type).then(function (data) {
+    var tags = Array.isArray(data) ? data : (data.result || []);
+    if (!Array.isArray(tags)) tags = [];
+    tags = tags.filter(function (t) {
+      return t && t.id && t.name;
+    });
+    if (tags.length === 0) {
+      resultsEl.innerHTML = '<div style="padding:8px 12px;color:var(--text-dim);font-size:13px">No tags found</div>';
+      return;
+    }
+    tags.sort(function (a, b) { return (b.count || 0) - (a.count || 0); });
+    var html = '';
+    tags.forEach(function (t) {
+      ensureTagInDB(t.id, t.name, t.type || 'tag', t.count);
+      var state = tagState[t.id];
+      var statusIcon = state ? TS_ICON[state.status] : '+';
+      var statusCls = state ? 'tsi-status ' + TS_LABEL[state.status] : 'tsi-action';
+      html += '<div class="tf-search-item" data-tid="' + t.id + '" data-name="' + escAttr(t.name) + '" data-type="' + (t.type || 'tag') + '" data-count="' + (t.count || 0) + '">';
+      html += '  <span>' + escHtml(t.name) + '</span>';
+      html += '  <span style="display:flex;align-items:center;gap:6px">';
+      html += '    <span class="tsi-count">' + (t.count || '') + '</span>';
+      html += '    <span class="' + statusCls + '">' + statusIcon + '</span>';
+      html += '  </span>';
+      html += '</div>';
+    });
+    resultsEl.innerHTML = html;
+    resultsEl.querySelectorAll('.tf-search-item').forEach(function (item) {
+      item.addEventListener('click', function () {
+        var tid = item.getAttribute('data-tid');
+        var name = item.getAttribute('data-name');
+        var type = item.getAttribute('data-type');
+        var count = parseInt(item.getAttribute('data-count'), 10) || 0;
+        // Cycle status
+        var cur = tagState[tid] ? tagState[tid].status : TS.DEFAULT;
+        var next = TS_NEXT[cur];
+        setTagStatus(tid, name, type, next, count);
+        doTfSearch(query);
+        if (tfCurrentTab !== 'applied' && type !== tfCurrentTab) {
+          // If we changed a tag not in current tab, switch to applied
+        }
+        renderTfTab(tfCurrentTab);
+        updateTfStats();
+      });
+    });
+  }).catch(function () {
+    resultsEl.innerHTML = '<div style="padding:8px 12px;color:var(--text-dim);font-size:13px">Search failed</div>';
+  });
+}
+
+/* ================================================================== */
+/*  Reader view                                                        */
+/* ================================================================== */
+
+var currentGalleryData = null;
+var currentPage = 1;
+var currentGalleryId = null;
+var prevView = 'home';
+var _detailGalleryData = null;
+var _readerReqId = 0;
+
+function openGallery(id, card) {
+  currentGalleryId = id;
+  if (card) {
+    var titleEl = card.querySelector('.title');
+    var title = titleEl ? titleEl.textContent : 'Gallery #' + id;
+    addHistory(id, title);
+  }
+  prevView = currentView;
+  switchView('detail');
+  loadGalleryDetail(id);
+}
+
+function buildGalleryPages(data) {
+  if (data.pages && Array.isArray(data.pages)) {
+    return data.pages.map(function (p, idx) {
+      return {
+        path: p.path || p.url || '',
+        t: p.t || p.type || 'p',
+        number: p.number || idx + 1,
+      };
+    });
+  }
+  if (data.images && data.images.pages && Array.isArray(data.images.pages)) {
+    return data.images.pages.map(function (p, idx) {
+      return {
+        path: '',
+        t: p.t || p.type || 'p',
+        number: idx + 1,
+      };
+    });
+  }
+  return [];
+}
+
+function getGalleryPageUrl(page, gallery) {
+  if (!page) return '';
+  if (page.url) return page.url;
+  if (page.path) return cdnUrl(pickServer(imageServers, 'i4.nhentai.net'), page.path);
+  if (gallery && gallery.media_id && page.number) {
+    return cdnUrl(pickServer(imageServers, 'i4.nhentai.net'), 'galleries/' + gallery.media_id + '/' + page.number + '.' + imageExtension(page.t));
+  }
+  return '';
+}
+
+function loadReader(id) {
+  var loadingEl = document.getElementById('reader-loading');
+
+  loadingEl.textContent = 'Loading gallery...';
+  loadingEl.style.display = 'block';
+
+  // Fetch fresh from API, cache computed URLs, render
+  invoke('api_gallery', { id: id }).then(function (data) {
+    // Store all tags from gallery into tagDB
+    if (data.tags && Array.isArray(data.tags)) {
+      data.tags.forEach(function (t) {
+        ensureTagInDB(t.id, t.name, t.type || 'tag', t.count);
+      });
+    }
+    // Pre-compute page metadata for reader
+    data.pages = buildGalleryPages(data);
+
+    // Pre-compute cover URL
+    thumbUrl(data);
+    // Cache the enriched response
+    invoke('db_save_gallery_cache', { gallery_id: id, data: JSON.stringify(data) }).catch(function () {});
+    renderReader(data); // showReaderPage manages the loading indicator
+  }).catch(function (err) {
+    // Fallback to cache
+    invoke('db_get_gallery_cache', { gallery_id: id }).then(function (cached) {
+      if (cached) {
+        var data = JSON.parse(cached);
+        renderReader(data); // showReaderPage manages the loading indicator
+        return;
+      }
+      loadingEl.textContent = 'Failed to load gallery: ' + escHtml(err.message);
+      loadingEl.style.display = 'block';
+    }).catch(function () {
+      loadingEl.textContent = 'Failed to load gallery: ' + escHtml(err.message);
+      loadingEl.style.display = 'block';
+    });
+  });
+}
+
+// Load an image element via the Rust proxy (bypasses CDN referrer/cookie restrictions)
+// Returns a promise that resolves when the image is loaded or rejects on error.
+function loadImageViaProxy(imgEl, url) {
+  if (!imgEl || !url) return Promise.reject('No element or URL');
+  return invoke('api_fetch_image_base64', { url: url }).then(function (res) {
+    return new Promise(function (resolve, reject) {
+      imgEl.onload = function () { imgEl.style.display = 'block'; resolve(); };
+      imgEl.onerror = function () { reject('Image decode failed'); };
+      imgEl.src = 'data:' + res.mime + ';base64,' + res.data;
+    });
+  });
+}
+
+/* ================================================================== */
+/*  Gallery Detail view                                                */
+/* ================================================================== */
+
+function loadGalleryDetail(id) {
+  var coverEl = document.getElementById('detail-cover');
+  var titleEl = document.getElementById('detail-title');
+  var metaEl = document.getElementById('detail-meta');
+  var tagsEl = document.getElementById('detail-tags');
+  var relatedEl = document.getElementById('detail-related');
+  var readBtn = document.getElementById('detail-read-btn');
+  var favBtn = document.getElementById('detail-fav-btn');
+
+  coverEl.innerHTML = '<div class="gd-loading">Loading...</div>';
+  titleEl.textContent = '';
+  metaEl.textContent = '';
+  tagsEl.innerHTML = '';
+  relatedEl.innerHTML = '';
+  readBtn.style.display = 'none';
+  favBtn.style.display = 'none';
+
+  var favId = String(id);
+  var isFav = favorites.indexOf(parseInt(id, 10)) !== -1 || favorites.indexOf(favId) !== -1;
+  favBtn.textContent = isFav ? '\u2605 Favorited' : '\u2606 Favorite';
+
+  invoke('api_gallery', { id: id }).then(function (data) {
+    data.pages = buildGalleryPages(data);
+    renderGalleryDetail(data, id, coverEl, titleEl, metaEl, tagsEl, relatedEl, readBtn, favBtn, isFav);
+    // Cache the enriched response
+    invoke('db_save_gallery_cache', { gallery_id: id, data: JSON.stringify(data) }).catch(function () {});
+  }).catch(function (err) {
+    // Fallback to cache
+    invoke('db_get_gallery_cache', { gallery_id: id }).then(function (cached) {
+      if (cached) {
+        try {
+          var d = JSON.parse(cached);
+          // Re-render the same as above but skip caching
+          renderGalleryDetail(d, id, coverEl, titleEl, metaEl, tagsEl, relatedEl, readBtn, favBtn, isFav);
+          return;
+        } catch (_) {}
+      }
+      coverEl.innerHTML = '<div class="gd-loading">Failed: ' + escHtml(err.message) + '</div>';
+    }).catch(function () {
+      coverEl.innerHTML = '<div class="gd-loading">Failed: ' + escHtml(err.message) + '</div>';
+    });
+  });
+}
+
+function renderGalleryDetail(data, id, coverEl, titleEl, metaEl, tagsEl, relatedEl, readBtn, favBtn, isFav) {
+  _detailGalleryData = data;
+  if (data.tags && Array.isArray(data.tags)) {
+    data.tags.forEach(function (t) {
+      ensureTagInDB(t.id, t.name, t.type || 'tag', t.count);
+    });
+  }
+
+  var title = data.title && (data.title.english || data.title.pretty || data.title.japanese || '');
+  titleEl.textContent = title || 'Gallery #' + id;
+  document.title = title || 'NHentai';
+
+  if (!data.pages || !Array.isArray(data.pages)) {
+    data.pages = buildGalleryPages(data);
+  }
+  var coverUrl = thumbUrl(data);
+  coverEl.innerHTML = '';
+  var img = document.createElement('img');
+  img.alt = 'Cover';
+  coverEl.appendChild(img);
+  loadImageViaProxy(img, coverUrl);
+
+  var parts = [];
+  if (data.num_pages) parts.push(data.num_pages + ' pages');
+  if (data.num_favorites !== undefined) parts.push(data.num_favorites + ' favorites');
+  if (data.upload_date) {
+    var d = new Date(data.upload_date * 1000);
+    parts.push(d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }));
+  }
+  metaEl.textContent = parts.join(' \u00B7 ');
+
+  var groupOrder = ['parody', 'character', 'tag', 'artist', 'group', 'category', 'language'];
+  var groups = {};
+  if (data.tags && Array.isArray(data.tags)) {
+    data.tags.forEach(function (t) {
+      if (!t || !t.name) return;
+      var type = t.type || 'tag';
+      if (!groups[type]) groups[type] = [];
+      groups[type].push(t);
+    });
+  }
+  var tagsHtml = '';
+  groupOrder.forEach(function (type) {
+    var list = groups[type];
+    if (!list || list.length === 0) return;
+    tagsHtml += '<div class="gd-tag-group"><div class="gd-tag-group-title">' + escHtml(type) + '</div><div class="gd-tag-group-inner">';
+    list.forEach(function (t) {
+      var state = tagState[t.id];
+      var cls = state ? ' gd-tag ' + TS_LABEL[state.status] : ' gd-tag';
+      tagsHtml += '<span class="' + cls + '" data-tid="' + t.id + '" data-name="' + escAttr(t.name) + '" data-type="' + escAttr(t.type || 'tag') + '" data-count="' + (t.count || 0) + '">' + escHtml(t.name) + '</span>';
+    });
+    tagsHtml += '</div></div>';
+  });
+  tagsEl.innerHTML = tagsHtml;
+
+  tagsEl.querySelectorAll('.gd-tag').forEach(function (el) {
+    el.addEventListener('click', function () {
+      var tid = el.getAttribute('data-tid');
+      var name = el.getAttribute('data-name');
+      var type = el.getAttribute('data-type');
+      var count = parseInt(el.getAttribute('data-count'), 10) || 0;
+      var cur = tagState[tid] ? tagState[tid].status : TS.DEFAULT;
+      var next = TS_NEXT[cur];
+      setTagStatus(tid, name, type, next, count);
+      el.className = 'gd-tag' + (next !== TS.DEFAULT ? ' ' + TS_LABEL[next] : '');
+    });
+  });
+
+  readBtn.style.display = 'block';
+  readBtn.onclick = function () {
+    switchView('reader');
+    if (_detailGalleryData && _detailGalleryData.id == id) {
+      renderReader(_detailGalleryData);
+    } else {
+      loadReader(id);
+    }
+  };
+
+  favBtn.style.display = 'block';
+  favBtn.className = 'gd-fav-btn' + (isFav ? ' fav' : '');
+  favBtn.onclick = function () {
+    var gid = parseInt(id, 10);
+    invoke('db_toggle_favorite', { gallery_id: gid }).then(function (result) {
+      var nowFav = result ? true : false;
+      if (nowFav) {
+        favBtn.textContent = '\u2605 Favorited';
+        favBtn.classList.add('fav');
+        if (favorites.indexOf(gid) === -1) favorites.push(gid);
+      } else {
+        favBtn.textContent = '\u2606 Favorite';
+        favBtn.classList.remove('fav');
+        favorites = favorites.filter(function (f) { return f !== gid; });
+      }
+    });
+  };
+
+  if (data.related && Array.isArray(data.related) && data.related.length > 0) {
+    var relHtml = '<h3>Related</h3>';
+    relHtml += '<div class="gallery-grid">';
+    data.related.forEach(function (rg) {
+      if (!rg || !rg.id) return;
+      var rt = thumbUrl(rg);
+      var rtTitle = rg.title && (rg.title.pretty || rg.title.english || rg.title.japanese || 'Untitled');
+      var rLang = getLanguage(rg);
+      var rPages = rg.num_pages || '';
+      relHtml += '<div class="gallery-card" data-gid="' + rg.id + '">';
+      relHtml += '<div class="card-img-wrap"><img src="' + rt + '" alt="" loading="lazy"></div>';
+      relHtml += '<div class="card-caption">' + escHtml(rtTitle) + '</div>';
+      relHtml += '<div class="card-info">';
+      if (rPages) relHtml += '<span class="pages">' + rPages + 'p</span>';
+      if (rLang) relHtml += '<span class="lang">' + escHtml(rLang) + '</span>';
+      relHtml += '</div></div>';
+    });
+    relHtml += '</div>';
+    relatedEl.innerHTML = relHtml;
+    relatedEl.querySelectorAll('.gallery-card').forEach(function (card) {
+      card.addEventListener('click', function () {
+        var gid = card.getAttribute('data-gid');
+        if (gid) openGallery(parseInt(gid, 10));
+      });
+    });
+  }
+}
+
+function renderReader(data) {
+  if (!data.pages || !Array.isArray(data.pages)) {
+    data.pages = buildGalleryPages(data);
+  }
+  currentGalleryData = data;
+  currentPage = 1;
+
+  var titleEl = document.getElementById('reader-title');
+  var metaEl = document.getElementById('reader-meta');
+  var tagsEl = document.getElementById('reader-tags');
+  var totalEl = document.getElementById('reader-total');
+  var pageInput = document.getElementById('reader-page-input');
+  var imgEl = document.getElementById('reader-img');
+  var loadingEl = document.getElementById('reader-loading');
+
+  // Title
+  var title = '';
+  if (data.title) {
+    title = data.title.english || data.title.pretty || data.title.japanese || '';
+  } else if (data.english_title) {
+    title = data.english_title;
+  }
+  titleEl.textContent = title || 'Gallery #' + data.id;
+  document.title = title || 'NHentai';
+
+  // Meta
+  metaEl.textContent = data.num_pages + ' pages' + (data.num_favorites !== undefined ? ' / ' + data.num_favorites + ' favs' : '');
+
+  // Tags
+  if (data.tags && Array.isArray(data.tags)) {
+    tagsEl.innerHTML = data.tags.map(function (t) {
+      if (typeof t === 'object' && t.name) {
+        return '<span class="rt-chip" title="' + escAttr(t.type || '') + ': ' + escAttr(t.name) + '">' + escHtml(t.name) + '</span>';
+      }
+      return '';
+    }).join('');
+  }
+
+  // Pages
+  totalEl.textContent = data.num_pages || '?';
+  pageInput.max = data.num_pages || 9999;
+
+  showReaderPage(1);
+}
+
+function showReaderPage(n) {
+  if (!currentGalleryData) return;
+  var pages = currentGalleryData.pages;
+  if (!pages || !pages.length) return;
+
+  n = Math.max(1, Math.min(n, pages.length));
+  currentPage = n;
+
+  var imgEl = document.getElementById('reader-img');
+  var loadingEl = document.getElementById('reader-loading');
+  var pageInput = document.getElementById('reader-page-input');
+  var prevBtn = document.getElementById('reader-prev');
+  var nextBtn = document.getElementById('reader-next');
+  var firstBtn = document.getElementById('reader-first');
+  var lastBtn = document.getElementById('reader-last');
+  var totalEl = document.getElementById('reader-total');
+  var metaEl = document.getElementById('reader-meta');
+
+  pageInput.value = n;
+
+  // Buttons
+  firstBtn.disabled = n <= 1;
+  prevBtn.disabled = n <= 1;
+  nextBtn.disabled = n >= pages.length;
+  lastBtn.disabled = n >= pages.length;
+
+  // Update meta with current page
+  if (currentGalleryData) {
+    metaEl.textContent = 'Page ' + n + '/' + currentGalleryData.num_pages +
+      (currentGalleryData.num_favorites !== undefined ? ' / ' + currentGalleryData.num_favorites + ' favs' : '');
+  }
+
+  // Always construct image URL from current CDN config (no stale cache)
+  var page = pages[n - 1];
+  if (!page) return;
+
+  var imgUrl = getGalleryPageUrl(page, currentGalleryData);
+
+  var reqId = ++_readerReqId;
+  loadingEl.textContent = 'Loading page ' + n + '...';
+  loadingEl.style.display = 'block';
+  imgEl.style.display = 'none';
+
+  if (imgUrl) {
+    loadImageViaProxy(imgEl, imgUrl).then(function () {
+      if (reqId !== _readerReqId) return;
+      loadingEl.style.display = 'none';
+      // Preload next 2 pages
+      preloadReaderPages(n + 1, 2);
+    }).catch(function () {
+      if (reqId !== _readerReqId) return;
+      loadingEl.textContent = 'Failed to load page ' + n;
+    });
+  } else {
+    loadingEl.textContent = 'Failed to load page ' + n;
+  }
+}
+
+function readerGoTo(n) {
+  showReaderPage(n);
+}
+
+function readerPrevPage() {
+  showReaderPage(currentPage - 1);
+}
+
+function preloadReaderPages(from, count) {
+  var pages = currentGalleryData ? currentGalleryData.pages : null;
+  if (!pages) return;
+  for (var i = 0; i < count; i++) {
+    var n = from + i;
+    if (n > pages.length) break;
+    var p = pages[n - 1];
+    if (!p) break;
+    var s = pickServer(imageServers, 'i4.nhentai.net');
+    var url = getGalleryPageUrl(p, currentGalleryData);
+    if (url) { var img = new Image(); img.src = url; }
+  }
+}
+
+function readerNextPage() {
+  showReaderPage(currentPage + 1);
+}
+
+/* Open URL in user's default browser (for login/logout/open-site) */
+function navigateToSite(url) {
+  return invoke('plugin:opener|open_url', { url: url }).catch(function () {
+    window.open(url, '_blank');
+  });
+}
+
+// Expose for inline event handlers
+window._connectToNhentai = function () { navigateToSite('https://nhentai.net/'); };
+
+/* ================================================================== */
+/*  Favorites                                                          */
+/* ================================================================== */
+
+function toggleFavorite(id) {
+  var idx = favorites.indexOf(id);
+  if (idx === -1) {
+    favorites.push(id);
+    invoke('db_toggle_favorite', { gallery_id: id }).catch(function () {});
+  } else {
+    favorites.splice(idx, 1);
+    invoke('db_toggle_favorite', { gallery_id: id }).catch(function () {});
+  }
+}
+
+function loadFavorites() {
+  var container = document.getElementById('favorites-content');
+  if (favorites.length === 0) {
+    container.innerHTML = '<div class="tf-empty">No favorites yet. Click the star on any gallery to add it.</div>';
+    return;
+  }
+  container.innerHTML = '<div class="loading"></div>';
+  var results = [];
+  var loaded = 0;
+  favorites.forEach(function (id) {
+    apiGetGallery(id).then(function (g) {
+      results.push(g);
+      loaded++;
+      if (loaded === favorites.length) {
+        var fakeData = { result: results };
+        renderGrid(container, fakeData);
+      }
+    }).catch(function () {
+      loaded++;
+      if (loaded === favorites.length) {
+        if (results.length === 0) {
+          container.innerHTML = '<div class="tf-empty">Could not load favorites.</div>';
+        } else {
+          var fakeData = { result: results };
+          renderGrid(container, fakeData);
+        }
+      }
+    });
+  });
+}
+
+/* ================================================================== */
+/*  History                                                            */
+/* ================================================================== */
+
+function addHistory(id, title) {
+  // Remove duplicate in memory then prepend
+  var idx = history.findIndex(function (h) { return h.id === id; });
+  if (idx !== -1) history.splice(idx, 1);
+  history.unshift({ id: id, title: title, time: Date.now() });
+  if (history.length > 200) history.length = 200;
+  invoke('db_add_history', { gallery_id: id, title: title }).catch(function () {});
+}
+
+function loadHistory() {
+  var container = document.getElementById('history-content');
+  if (history.length === 0) {
+    container.innerHTML = '<div class="tf-empty">No browsing history yet.</div>';
+    return;
+  }
+  var html = '<div style="display:flex;flex-direction:column;gap:4px">';
+  history.forEach(function (h) {
+    html += '<div class="gallery-card" style="display:flex;align-items:center;gap:12px;padding:8px 12px;margin-bottom:2px" data-gid="' + h.id + '">';
+    html += '  <span style="font-size:13px;font-weight:600;color:var(--accent)">#' + h.id + '</span>';
+    html += '  <span style="font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + escHtml(h.title) + '</span>';
+    html += '  <span style="font-size:11px;color:var(--text-dim);white-space:nowrap">' + formatDate(Math.floor(h.time / 1000)) + '</span>';
+    html += '</div>';
+  });
+  html += '</div>';
+  container.innerHTML = html;
+  container.querySelectorAll('.gallery-card').forEach(function (el) {
+    el.addEventListener('click', function () {
+      var gid = el.getAttribute('data-gid');
+      if (gid) openGallery(parseInt(gid, 10));
+    });
+  });
+}
+
+/* ================================================================== */
+/*  Random gallery                                                     */
+/* ================================================================== */
+
+function loadRandom() {
+  var container = document.getElementById('random-content');
+  container.innerHTML = '<div class="loading"></div>';
+  apiRandom().then(function (data) {
+    var id = data.id;
+    if (id) {
+      return apiGetGallery(id);
+    }
+    throw new Error('No random gallery');
+  }).then(function (g) {
+    var fakeData = { result: [g] };
+    renderGrid(container, fakeData);
+  }).catch(function (err) {
+    container.innerHTML = '<div style="text-align:center;padding:24px">';
+    container.innerHTML += '  <div class="tf-empty">Failed: ' + escHtml(err.message) + '</div>';
+    container.innerHTML += '  <button onclick="window._loadRandom()" style="margin-top:12px;padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius);font-size:14px">Try Again</button>';
+    container.innerHTML += '</div>';
+  });
+}
+
+/* ================================================================== */
+/*  Navigation                                                        */
+/* ================================================================== */
+
+var currentView = 'home';
+
+function switchView(name) {
+  currentView = name;
+  document.querySelectorAll('.view').forEach(function (v) { v.classList.remove('active'); });
+  document.querySelectorAll('.reader-view').forEach(function (v) { v.classList.remove('active'); });
+  var view = document.getElementById('view-' + name);
+  if (view) view.classList.add('active');
+  // reader-view uses class active instead of .view active
+  var rv = document.querySelector('.reader-view');
+  if (name === 'reader') {
+    if (rv) rv.classList.add('active');
+  }
+
+  document.querySelectorAll('.sidebar .nav-item').forEach(function (b) { b.classList.remove('active'); });
+  var navBtn = document.querySelector('.sidebar .nav-item[data-view="' + name + '"]');
+  if (navBtn) navBtn.classList.add('active');
+
+  closeSidebar();
+  refreshCurrentView(name);
+}
+
+function refreshCurrentView(name) {
+  name = name || currentView;
+  if (name === 'home') loadHome();
+  else if (name === 'search') loadSearch(searchQuery, searchPage);
+  else if (name === 'tags') loadTagFilter();
+  else if (name === 'random') loadRandom();
+  else if (name === 'favorites') loadFavorites();
+  else if (name === 'history') loadHistory();
+  else if (name === 'settings') loadSettings();
+}
+
+function toggleSidebar() {
+  var sidebar = document.getElementById('sidebar');
+  var overlay = document.getElementById('sidebar-overlay');
+  sidebar.classList.toggle('open');
+  overlay.classList.toggle('open');
+}
+
+function closeSidebar() {
+  if (window.innerWidth < 900) {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebar-overlay').classList.remove('open');
+  }
+}
+
+/* ================================================================== */
+/*  Settings                                                           */
+/* ================================================================== */
+
+function loadSettings() {
+  // Populate language dropdown
+  var langSelect = document.getElementById('set-language');
+  var current = settings.language || '';
+  // Generate language options from nameToLang's mappings
+  var langs = [
+    ['english','English'],['japanese','Japanese'],['chinese','Chinese'],['korean','Korean'],
+    ['french','French'],['german','German'],['spanish','Spanish'],['portuguese','Portuguese'],
+    ['russian','Russian'],['italian','Italian'],['dutch','Dutch'],['polish','Polish'],
+    ['swedish','Swedish'],['danish','Danish'],['finnish','Finnish'],['norwegian','Norwegian'],
+    ['czech','Czech'],['hungarian','Hungarian'],['romanian','Romanian'],['thai','Thai'],
+    ['vietnamese','Vietnamese'],['arabic','Arabic'],['turkish','Turkish'],['indonesian','Indonesian'],
+    ['tagalog','Tagalog'],['malay','Malay'],['burmese','Burmese'],['mongolian','Mongolian'],
+    ['tibetan','Tibetan'],['armenian','Armenian'],['georgian','Georgian'],['greek','Greek'],
+    ['hebrew','Hebrew'],['hindi','Hindi'],['bengali','Bengali'],['punjabi','Punjabi'],
+    ['tamil','Tamil'],['telugu','Telugu'],['marathi','Marathi'],['gujarati','Gujarati'],
+    ['kannada','Kannada'],['malayalam','Malayalam'],['sinhala','Sinhala'],['nepali','Nepali'],
+    ['khmer','Khmer'],['lao','Lao'],['uzbek','Uzbek'],['kazakh','Kazakh'],
+    ['azerbaijani','Azerbaijani'],['persian','Persian'],['ukrainian','Ukrainian'],['belarusian','Belarusian'],
+    ['bulgarian','Bulgarian'],['serbian','Serbian'],['croatian','Croatian'],['bosnian','Bosnian'],
+    ['macedonian','Macedonian'],['slovenian','Slovenian'],['slovak','Slovak'],['estonian','Estonian'],
+    ['latvian','Latvian'],['lithuanian','Lithuanian'],['albanian','Albanian'],['swahili','Swahili'],
+    ['irish','Irish'],['icelandic','Icelandic'],['maltese','Maltese'],['welsh','Welsh'],
+    ['galician','Galician'],['basque','Basque'],['catalan','Catalan'],['afrikaans','Afrikaans'],
+    ['amharic','Amharic'],['javanese','Javanese'],['sundanese','Sundanese'],['xhosa','Xhosa'],
+    ['zulu','Zulu'],['esperanto','Esperanto'],['latin','Latin'],['somali','Somali'],
+    ['tajik','Tajik'],['turkmen','Turkmen'],['uighur','Uighur'],['urdu','Urdu'],
+    ['yiddish','Yiddish'],['yoruba','Yoruba'],['cebuano','Cebuano'],['scottish','Scottish']
+  ];
+  langSelect.innerHTML = '<option value="">All Languages</option>';
+  langs.forEach(function (l) {
+    var code = nameToLang(l[0]);
+    var flag = LANG_FLAG[code] || '';
+    var label = flag ? flag + ' ' + l[1] : l[1];
+    var selected = l[0] === current ? ' selected' : '';
+    langSelect.innerHTML += '<option value="' + l[0] + '"' + selected + '>' + label + '</option>';
+  });
+
+  document.getElementById('set-columns').value = settings.columns || 'auto';
+  document.getElementById('set-remove-avoided').checked = settings.removeAvoided !== false;
+
+  var keyInput = document.getElementById('set-api-key');
+  invoke('db_get_setting', { key: 'api_key' }).then(function (val) {
+    if (val) {
+      keyInput.value = val;
+      setApiStatus(true);
+    } else {
+      keyInput.value = '';
+      setApiStatus(false);
+    }
+  }).catch(function () {
+    keyInput.value = '';
+    setApiStatus(false);
+  });
+}
+
+function setApiStatus(enabled) {
+  var statusEl = document.getElementById('api-key-status');
+  if (!statusEl) return;
+  statusEl.textContent = enabled ? 'Logged in' : 'Not logged in';
+  statusEl.className = 'login-status ' + (enabled ? 'logged-in' : 'logged-out');
+}
+
+/* ================================================================== */
+/*  Utilities                                                         */
+/* ================================================================== */
+
+function escHtml(s) { var d = document.createElement('div'); d.appendChild(document.createTextNode(s)); return d.innerHTML; }
+function escAttr(s) { return String(s).replace(/"/g,'&quot;').replace(/&/g,'&amp;'); }
+
+/* Expose for inline handlers */
+window._loadRandom = loadRandom;
+
+/* ================================================================== */
+/*  Init                                                              */
+/* ================================================================== */
+
+function init() {
+  // Set up UI immediately so the user never stares at a blank/loading page
+  initUI();
+  switchView('home');
+  // Load persisted data in the background (DB or localStorage)
+  loadAll().then(function () {
+    if (currentView === 'search') {
+      renderSearchTagChips();
+    } else if (currentView === 'tags') {
+      updateTfStats();
+      renderTfTab(tfCurrentTab);
+    }
+  }).catch(function () {});
+  // Fetch CDN config
+  loadConfig();
+}
+
+function loadConfig() {
+  // Try DB cache first
+  invoke('db_get_setting', { key: 'cdn_config' }).then(function (val) {
+    if (val) {
+      try {
+        var cfg = JSON.parse(val);
+        if (cfg.thumb_servers && cfg.thumb_servers.length > 0) thumbServers = cfg.thumb_servers;
+        if (cfg.image_servers && cfg.image_servers.length > 0) imageServers = cfg.image_servers;
+      } catch (_) {}
+    }
+  }).catch(function () {});
+  // Always fetch fresh config and cache it
+  invoke('api_get_cdn_config').then(function (cfg) {
+    if (cfg.thumb_servers && cfg.thumb_servers.length > 0) {
+      thumbServers = cfg.thumb_servers;
+    }
+    if (cfg.image_servers && cfg.image_servers.length > 0) {
+      imageServers = cfg.image_servers;
+    }
+    invoke('db_set_setting', { key: 'cdn_config', value: JSON.stringify(cfg) }).catch(function () {});
+  }).catch(function () {});
+}
+
+function initUI() {
+  // Settings listeners
+  document.getElementById('set-language').addEventListener('change', function () {
+    settings.language = this.value;
+    saveSettings();
+    refreshCurrentView();
+  });
+  document.getElementById('set-columns').addEventListener('change', function () {
+    settings.columns = this.value;
+    saveSettings();
+    refreshCurrentView();
+  });
+  document.getElementById('set-remove-avoided').addEventListener('change', function () {
+    settings.removeAvoided = this.checked;
+    saveSettings();
+    refreshCurrentView();
+  });
+
+  document.getElementById('save-api-key-btn').addEventListener('click', function () {
+    var val = document.getElementById('set-api-key').value.trim();
+    if (val) {
+      invoke('api_set_api_key', { key: val }).then(function () {
+        setApiStatus(true);
+      }).catch(function () {
+        setApiStatus(false);
+      });
+    } else {
+      invoke('api_clear_api_key').then(function () {
+        setApiStatus(false);
+      }).catch(function () {
+        setApiStatus(false);
+      });
+    }
+  });
+
+  // Clear buttons
+  document.getElementById('clear-tags-btn').addEventListener('click', function () {
+    if (confirm('Clear all tags? This removes all tag filters and the tag database.')) {
+      tagState = {};
+      tagDB = {};
+      invoke('db_clear_tags').catch(function () {});
+      syncTagStateToLS();
+      refreshCurrentView();
+    }
+  });
+  document.getElementById('clear-history-btn').addEventListener('click', function () {
+    if (confirm('Clear all history?')) {
+      history = [];
+      invoke('db_clear_history').catch(function () {});
+      if (currentView === 'history') loadHistory();
+    }
+  });
+  document.getElementById('clear-favs-btn').addEventListener('click', function () {
+    if (confirm('Clear all favorites?')) {
+      favorites = [];
+      invoke('db_clear_favorites').catch(function () {});
+      if (currentView === 'favorites') loadFavorites();
+    }
+  });
+
+  // Sidebar
+  document.getElementById('menu-btn').addEventListener('click', toggleSidebar);
+  document.getElementById('sidebar-overlay').addEventListener('click', toggleSidebar);
+
+  // Nav items
+  document.querySelectorAll('.sidebar .nav-item').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      switchView(btn.getAttribute('data-view'));
+    });
+  });
+
+  // App title = home
+  document.getElementById('app-title').addEventListener('click', function () { switchView('home'); });
+
+  // Home sort bar
+  document.querySelectorAll('#home-sort-bar button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('#home-sort-bar button').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      homeSort = btn.getAttribute('data-sort');
+      loadHome();
+    });
+  });
+
+  // Search sort bar
+  document.querySelectorAll('#search-sort-bar button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('#search-sort-bar button').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      searchSort = btn.getAttribute('data-sort');
+      loadSearch(document.getElementById('search-input').value.trim(), 1, searchSort);
+    });
+  });
+
+  // Search
+  document.getElementById('search-btn').addEventListener('click', function () {
+    var q = document.getElementById('search-input').value.trim();
+    loadSearch(q, 1, searchSort);
+  });
+  document.getElementById('search-input').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') document.getElementById('search-btn').click();
+  });
+
+  // Apply saved sort in home bar
+  document.querySelectorAll('#home-sort-bar button').forEach(function (btn) {
+    if (btn.getAttribute('data-sort') === homeSort) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+  document.querySelectorAll('#search-sort-bar button').forEach(function (btn) {
+    if (btn.getAttribute('data-sort') === searchSort) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  // Tag filter tabs
+  document.querySelectorAll('#tf-tabs button').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('#tf-tabs button').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      renderTfTab(btn.getAttribute('data-tf-tab'));
+    });
+  });
+
+  // Tag filter search
+  document.getElementById('tf-search-input').addEventListener('input', function () {
+    var val = this.value.trim();
+    if (tfSearchTimeout) clearTimeout(tfSearchTimeout);
+    if (val.length < 2) {
+      document.getElementById('tf-search-results').innerHTML = '';
+      return;
+    }
+    tfSearchTimeout = setTimeout(function () { doTfSearch(val); }, 300);
+  });
+
+  // Reader view
+  document.getElementById('reader-close').addEventListener('click', function () {
+    if (currentGalleryId) {
+      switchView('detail');
+    } else {
+      switchView('home');
+    }
+    document.title = 'NHentai';
+    currentGalleryData = null;
+  });
+  document.getElementById('reader-prev').addEventListener('click', readerPrevPage);
+  document.getElementById('reader-next').addEventListener('click', readerNextPage);
+  document.getElementById('reader-first').addEventListener('click', function () { readerGoTo(1); });
+  document.getElementById('reader-last').addEventListener('click', function () {
+    if (currentGalleryData) readerGoTo(currentGalleryData.pages.length);
+  });
+  document.getElementById('reader-prev-area').addEventListener('click', readerPrevPage);
+  document.getElementById('reader-next-area').addEventListener('click', readerNextPage);
+  document.getElementById('reader-page-input').addEventListener('change', function () {
+    var n = parseInt(this.value, 10);
+    if (isNaN(n)) { this.value = currentPage; return; }
+    readerGoTo(n);
+  });
+  document.getElementById('reader-page-input').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') this.blur();
+  });
+
+  // Detail view back
+  document.getElementById('detail-back').addEventListener('click', function () {
+    switchView(prevView);
+  });
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', function (e) {
+    if (currentView !== 'reader') return;
+    // Ignore if typing in an input
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+    if (e.key === 'ArrowLeft' || e.key === 'a') { e.preventDefault(); readerPrevPage(); }
+    else if (e.key === 'ArrowRight' || e.key === 'd') { e.preventDefault(); readerNextPage(); }
+    else if (e.key === 'Escape') {
+      e.preventDefault();
+      document.getElementById('reader-close').click();
+    }
+  });
+
+  // Sync DB on page unload (user navigates to nhentai.net gallery)
+  window.addEventListener('beforeunload', function () {
+    if (_dbSyncTimer) {
+      clearTimeout(_dbSyncTimer);
+      doDBSync();
+    }
+  });
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+
+})();
+</script>
+</body>
+</html>
